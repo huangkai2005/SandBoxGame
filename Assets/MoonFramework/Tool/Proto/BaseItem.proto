@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package MoonFramework.Template;
+
+message BaseItemPro{
+  int32 itemID = 1;
+  string itemName = 2;
+  string itemType = 3;
+}
+
