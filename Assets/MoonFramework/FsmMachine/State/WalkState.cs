@@ -3,6 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using MoonFramework.Model;
 using MoonFramework.Template;
+using MoonFramework.View;
 
 namespace MoonFramework.FSM
 {
@@ -17,6 +18,7 @@ namespace MoonFramework.FSM
         {
             _token = new();
             _completion = new();
+            AnimancerManager.Instance.Play((fsmMachine.entity as Actor)?.GetType().Name, "Walk");
         }
 
         public override void Entry()
@@ -30,7 +32,6 @@ namespace MoonFramework.FSM
             {
                 await UniTask.Yield(_token.Token);
                 (fsmMachine.entity as Actor)?.Walk(_completion);
-                int exit = await _completion.Task;
             }
         }
 
