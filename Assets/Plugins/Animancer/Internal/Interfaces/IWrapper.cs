@@ -2,17 +2,16 @@
 
 namespace Animancer
 {
-    /// <summary>An object which wraps a <see cref="WrappedObject"/> object.</summary>
+    /// <summary>An object which wraps a <see cref="WrappedObject" /> object.</summary>
     /// https://kybernetik.com.au/animancer/api/Animancer/IWrapper
-    /// 
     public interface IWrapper
     {
         /************************************************************************************************************************/
 
         /// <summary>The wrapped object.</summary>
         /// <remarks>
-        /// Use <see cref="AnimancerUtilities.GetWrappedObject"/> in case the <see cref="WrappedObject"/> is also an
-        /// <see cref="IWrapper"/>.
+        ///     Use <see cref="AnimancerUtilities.GetWrappedObject" /> in case the <see cref="WrappedObject" /> is also an
+        ///     <see cref="IWrapper" />.
         /// </remarks>
         object WrappedObject { get; }
 
@@ -24,7 +23,7 @@ namespace Animancer
     {
         /************************************************************************************************************************/
 
-        /// <summary>Returns the <see cref="IWrapper.WrappedObject"/> recursively.</summary>
+        /// <summary>Returns the <see cref="IWrapper.WrappedObject" /> recursively.</summary>
         public static object GetWrappedObject(object wrapper)
         {
             while (wrapper is IWrapper targetWrapper)
@@ -34,7 +33,7 @@ namespace Animancer
         }
 
         /// <summary>
-        /// Returns the `wrapper` or first <see cref="IWrapper.WrappedObject"/> which is a <typeparamref name="T"/>.
+        ///     Returns the `wrapper` or first <see cref="IWrapper.WrappedObject" /> which is a <typeparamref name="T" />.
         /// </summary>
         public static bool TryGetWrappedObject<T>(object wrapper, out T wrapped) where T : class
         {
@@ -54,4 +53,3 @@ namespace Animancer
         /************************************************************************************************************************/
     }
 }
-

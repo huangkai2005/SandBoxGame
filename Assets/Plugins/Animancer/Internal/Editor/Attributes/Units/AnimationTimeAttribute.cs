@@ -1,5 +1,7 @@
 // Animancer // https://kybernetik.com.au/animancer // Copyright 2018-2023 Kybernetik //
 
+
+using System.Diagnostics;
 #if UNITY_EDITOR
 using Animancer.Editor;
 using System;
@@ -11,16 +13,16 @@ namespace Animancer.Units
 {
     /// <summary>[Editor-Conditional] Causes a float field to display using 3 fields: Normalized, Seconds, and Frames.</summary>
     /// <remarks>
-    /// Documentation: <see href="https://kybernetik.com.au/animancer/docs/manual/transitions#time-fields">Time Fields</see>
+    ///     Documentation:
+    ///     <see href="https://kybernetik.com.au/animancer/docs/manual/transitions#time-fields">Time Fields</see>
     /// </remarks>
     /// https://kybernetik.com.au/animancer/api/Animancer.Units/AnimationTimeAttribute
-    /// 
-    [System.Diagnostics.Conditional(Strings.UnityEditor)]
+    [Conditional(Strings.UnityEditor)]
     public sealed class AnimationTimeAttribute : UnitsAttribute
     {
         /************************************************************************************************************************/
 
-        /// <summary>A unit of measurement used by the <see cref="AnimationTimeAttribute"/>.</summary>
+        /// <summary>A unit of measurement used by the <see cref="AnimationTimeAttribute" />.</summary>
         public enum Units
         {
             /// <summary>A value of 1 represents the end of the animation.</summary>
@@ -30,7 +32,7 @@ namespace Animancer.Units
             Seconds = 1,
 
             /// <summary>A value of 1 represents 1 frame.</summary>
-            Frames = 2,
+            Frames = 2
         }
 
         /// <summary>An explanation of the suffixes used in fields drawn by this attribute.</summary>
@@ -38,7 +40,7 @@ namespace Animancer.Units
 
         /************************************************************************************************************************/
 
-        /// <summary>Cretes a new <see cref="AnimationTimeAttribute"/>.</summary>
+        /// <summary>Cretes a new <see cref="AnimationTimeAttribute" />.</summary>
         public AnimationTimeAttribute(Units units)
         {
 #if UNITY_EDITOR
@@ -52,13 +54,13 @@ namespace Animancer.Units
 
         /// <summary>[Editor-Only] A converter that adds an 'x' suffix to the given number.</summary>
         public static readonly CompactUnitConversionCache
-            XSuffix = new CompactUnitConversionCache("x");
+            XSuffix = new("x");
 
-        private static new readonly CompactUnitConversionCache[] DisplayConverters =
+        private new static readonly CompactUnitConversionCache[] DisplayConverters =
         {
             XSuffix,
-            new CompactUnitConversionCache("s"),
-            new CompactUnitConversionCache("f"),
+            new("s"),
+            new("f")
         };
 
         /************************************************************************************************************************/
@@ -68,13 +70,15 @@ namespace Animancer.Units
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override int GetLineCount(SerializedProperty property, GUIContent label)
-            => EditorGUIUtility.wideMode || TransitionDrawer.Context == null ? 1 : 2;
+        {
+            return EditorGUIUtility.wideMode || TransitionDrawer.Context == null ? 1 : 2;
+        }
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override void OnGUI(Rect area, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginChangeCheck();
@@ -86,10 +90,8 @@ namespace Animancer.Units
             EndProperty(area, property, ref value);
 
             if (EditorGUI.EndChangeCheck())
-            {
                 TransitionPreviewWindow.PreviewNormalizedTime =
                     GetDisplayValue(value, nextDefaultValue) * Multipliers[(int)Units.Normalized];
-            }
         }
 
         /************************************************************************************************************************/
@@ -129,7 +131,7 @@ namespace Animancer.Units
 
         /************************************************************************************************************************/
 
-        private static new readonly float[] Multipliers = new float[3];
+        private new static readonly float[] Multipliers = new float[3];
 
         private float[] CalculateMultipliers(float length, float frameRate)
         {
@@ -212,29 +214,29 @@ namespace Animancer.Units
 
         /************************************************************************************************************************/
 
-        /// <summary>[Editor-Only] Options to determine how <see cref="AnimationTimeAttribute"/> displays.</summary>
+        /// <summary>[Editor-Only] Options to determine how <see cref="AnimationTimeAttribute" /> displays.</summary>
         [Serializable]
         public class Settings
         {
             /************************************************************************************************************************/
 
             /// <summary>Should time fields show approximations if the value is too long for the GUI?</summary>
-            /// <remarks>This setting is used by <see cref="CompactUnitConversionCache"/>.</remarks>
+            /// <remarks>This setting is used by <see cref="CompactUnitConversionCache" />.</remarks>
             [Tooltip("Should time fields show approximations if the value is too long for the GUI?" +
-                " For example, '1.111111' could instead show '1.111~'.")]
+                     " For example, '1.111111' could instead show '1.111~'.")]
             public bool showApproximations = true;
 
-            /// <summary>Should the <see cref="Units.Normalized"/> field be shown?</summary>
+            /// <summary>Should the <see cref="Units.Normalized" /> field be shown?</summary>
             /// <remarks>This setting is ignored for fields which directly store the normalized value.</remarks>
             [Tooltip("Should the " + nameof(Units.Normalized) + " field be shown?")]
             public bool showNormalized = true;
 
-            /// <summary>Should the <see cref="Units.Seconds"/> field be shown?</summary>
+            /// <summary>Should the <see cref="Units.Seconds" /> field be shown?</summary>
             /// <remarks>This setting is ignored for fields which directly store the seconds value.</remarks>
             [Tooltip("Should the " + nameof(Units.Seconds) + " field be shown?")]
             public bool showSeconds = true;
 
-            /// <summary>Should the <see cref="Units.Frames"/> field be shown?</summary>
+            /// <summary>Should the <see cref="Units.Frames" /> field be shown?</summary>
             /// <remarks>This setting is ignored for fields which directly store the frame value.</remarks>
             [Tooltip("Should the " + nameof(Units.Frames) + " field be shown?")]
             public bool showFrames = true;
@@ -247,4 +249,3 @@ namespace Animancer.Units
         /************************************************************************************************************************/
     }
 }
-

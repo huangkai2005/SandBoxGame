@@ -23,32 +23,41 @@ namespace MoonFramework.Template
         }
 
         /// <summary>
-        /// 提供给外部 用于外部帧更新事件函数
-        /// </summary> 
+        ///     提供给外部 用于外部帧更新事件函数
+        /// </summary>
         /// <param name="_fun"></param>
         public void SendUpdateCommand(Action _fun)
-            => controller.SendCommand(_fun);
+        {
+            controller.SendCommand(_fun);
+        }
 
         /// <summary>
-        /// 提供给外部 用于移除外部帧更新事件函数
+        ///     提供给外部 用于移除外部帧更新事件函数
         /// </summary>
         /// <param name="_fun"></param>
         public void ReturnUpdateCommand(Action _fun)
-            => controller.ReturnCommand(_fun);
+        {
+            controller.ReturnCommand(_fun);
+        }
 
         /// <summary>
-        /// 开启协程
+        ///     开启协程
         /// </summary>
         /// <param name="routine"></param>
         /// <returns></returns>
         public Coroutine StartCoroutine(IEnumerator routine)
-            => controller.StartCoroutine(routine);
+        {
+            return controller.StartCoroutine(routine);
+        }
 
         public Coroutine StartCoroutine(string methodName, [DefaultValue("null")] object value)
-            => controller.StartCoroutine(methodName, value);
+        {
+            return controller.StartCoroutine(methodName, value);
+        }
 
         public Coroutine StartCoroutine(string methodName)
-            => controller.StartCoroutine(methodName);
+        {
+            return controller.StartCoroutine(methodName);
+        }
     }
-
 }

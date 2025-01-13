@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,80 +12,23 @@ namespace Animancer.Editor
 {
     /// <summary>[Editor-Only] Draws a GUI box denoting a period of time.</summary>
     /// https://kybernetik.com.au/animancer/api/Animancer.Editor/TimelineGUI
-    /// 
     public class TimelineGUI : IDisposable
     {
-        /************************************************************************************************************************/
-        #region Fields
-        /************************************************************************************************************************/
-
-        private static readonly ConversionCache<float, string>
-            G2Cache = new ConversionCache<float, string>((value) =>
-            {
-                if (Math.Abs(value) <= 99)
-                    return value.ToString("G2");
-                else
-                    return ((int)value).ToString();
-            });
-
-        private static Texture _EventIcon;
-
-        /// <summary>The icon used for events.</summary>
-        public static Texture EventIcon => _EventIcon != null ?
-            _EventIcon :
-            (_EventIcon = AnimancerGUI.LoadIcon("Animation.EventMarker"));
-
-        private static readonly Color
-            FadeHighlightColor = new Color(0.35f, 0.5f, 1, 0.5f),
-            SelectedEventColor = new Color(0.3f, 0.55f, 0.95f),
-            UnselectedEventColor = new Color(0.9f, 0.9f, 0.9f),
-            PreviewTimeColor = new Color(1, 0.25f, 0.1f),
-            BaseTimeColor = new Color(0.5f, 0.5f, 0.5f, 0.75f);
-
-        private Rect _Area;
-
-        /// <summary>The pixel area in which this <see cref="TimelineGUI"/> is drawing.</summary>
-        public Rect Area => _Area;
-
-        private float _Speed, _Duration, _MinTime, _MaxTime, _StartTime, _FadeInEnd, _FadeOutEnd, _EndTime, _SecondsToPixels;
-        private bool _HasEndTime;
-
-        private readonly List<float>
-            EventTimes = new List<float>();
-
-        /// <summary>The height of the time ticks.</summary>
-        public float TickHeight { get; private set; }
+        private static readonly TimelineGUI Instance = new();
 
         /************************************************************************************************************************/
-        #endregion
-        /************************************************************************************************************************/
-        #region Conversions
-        /************************************************************************************************************************/
 
-        /// <summary>Converts a number of seconds to a horizontal pixel position along the ruler.</summary>
-        /// <remarks>The value is rounded to the nearest integer.</remarks>
-        public float SecondsToPixels(float seconds) => AnimancerUtilities.Round((seconds - _MinTime) * _SecondsToPixels);
-
-        /// <summary>Converts a horizontal pixel position along the ruler to a number of seconds.</summary>
-        public float PixelsToSeconds(float pixels) => (pixels / _SecondsToPixels) + _MinTime;
-
-        /// <summary>Converts a number of seconds to a normalized time value.</summary>
-        public float SecondsToNormalized(float seconds) => seconds / _Duration;
-
-        /// <summary>Converts a normalized time value to a number of seconds.</summary>
-        public float NormalizedToSeconds(float normalized) => normalized * _Duration;
-
-        /************************************************************************************************************************/
-        #endregion
+        private static readonly Vector3[] QuadVertices = new Vector3[4];
         /************************************************************************************************************************/
 
-        private TimelineGUI() { }
-        private static readonly TimelineGUI Instance = new TimelineGUI();
+        private TimelineGUI()
+        {
+        }
 
-        /// <summary>The currently drawing <see cref="TimelineGUI"/> (or null if none is drawing).</summary>
+        /// <summary>The currently drawing <see cref="TimelineGUI" /> (or null if none is drawing).</summary>
         public static TimelineGUI Current { get; private set; }
 
-        /// <summary>Ends the area started by <see cref="BeginGUI"/>.</summary>
+        /// <summary>Ends the area started by <see cref="BeginGUI" />.</summary>
         void IDisposable.Dispose()
         {
             Current = null;
@@ -94,8 +38,8 @@ namespace Animancer.Editor
         /************************************************************************************************************************/
 
         /// <summary>
-        /// Sets the `area` in which the ruler will be drawn and draws a <see cref="GUI.Box(Rect, string)"/> there.
-        /// The returned object must have <see cref="IDisposable.Dispose"/> called on it afterwards.
+        ///     Sets the `area` in which the ruler will be drawn and draws a <see cref="GUI.Box(Rect, string)" /> there.
+        ///     The returned object must have <see cref="IDisposable.Dispose" /> called on it afterwards.
         /// </summary>
         private static IDisposable BeginGUI(Rect area)
         {
@@ -125,10 +69,13 @@ namespace Animancer.Editor
         /************************************************************************************************************************/
 
         /// <summary>Draws the ruler GUI and handles input events for the specified `context`.</summary>
-        public static void DoGUI(Rect area, SerializableEventSequenceDrawer.Context context, out float addEventNormalizedTime)
+        public static void DoGUI(Rect area, SerializableEventSequenceDrawer.Context context,
+            out float addEventNormalizedTime)
         {
             using (BeginGUI(area))
+            {
                 Current.DoGUI(context, out addEventNormalizedTime);
+            }
         }
 
         /************************************************************************************************************************/
@@ -206,14 +153,9 @@ namespace Animancer.Editor
         /// <summary>Calculates the start time of the transition (in seconds).</summary>
         public static float GetStartTime(float normalizedStartTime, float speed, float duration)
         {
-            if (float.IsNaN(normalizedStartTime))
-            {
-                return speed < 0 ? duration : 0;
-            }
-            else
-            {
-                return normalizedStartTime * duration;
-            }
+            if (float.IsNaN(normalizedStartTime)) return speed < 0 ? duration : 0;
+
+            return normalizedStartTime * duration;
         }
 
         /// <summary>Calculates the end time of the fade out (in seconds).</summary>
@@ -221,13 +163,8 @@ namespace Animancer.Editor
         {
             if (speed < 0)
                 return endTime > 0 ? 0 : (endTime - AnimancerPlayable.DefaultFadeDuration) * -speed;
-            else
-                return endTime < duration ? duration : endTime + AnimancerPlayable.DefaultFadeDuration * speed;
+            return endTime < duration ? duration : endTime + AnimancerPlayable.DefaultFadeDuration * speed;
         }
-
-        /************************************************************************************************************************/
-
-        private static readonly Vector3[] QuadVertices = new Vector3[4];
 
         /// <summary>Draws a polygon describing the start, end, and fade details.</summary>
         private void DoFadeHighlightGUI()
@@ -246,7 +183,98 @@ namespace Animancer.Editor
         }
 
         /************************************************************************************************************************/
+
+        #region Fields
+
+        /************************************************************************************************************************/
+
+        private static readonly ConversionCache<float, string>
+            G2Cache = new(value =>
+            {
+                if (Math.Abs(value) <= 99)
+                    return value.ToString("G2");
+                return ((int)value).ToString();
+            });
+
+        private static Texture _EventIcon;
+
+        /// <summary>The icon used for events.</summary>
+        public static Texture EventIcon =>
+            _EventIcon != null ? _EventIcon : _EventIcon = AnimancerGUI.LoadIcon("Animation.EventMarker");
+
+        private static readonly Color
+            FadeHighlightColor = new(0.35f, 0.5f, 1, 0.5f),
+            SelectedEventColor = new(0.3f, 0.55f, 0.95f),
+            UnselectedEventColor = new(0.9f, 0.9f, 0.9f),
+            PreviewTimeColor = new(1, 0.25f, 0.1f),
+            BaseTimeColor = new(0.5f, 0.5f, 0.5f, 0.75f);
+
+        private Rect _Area;
+
+        /// <summary>The pixel area in which this <see cref="TimelineGUI" /> is drawing.</summary>
+        public Rect Area => _Area;
+
+        private float _Speed,
+            _Duration,
+            _MinTime,
+            _MaxTime,
+            _StartTime,
+            _FadeInEnd,
+            _FadeOutEnd,
+            _EndTime,
+            _SecondsToPixels;
+
+        private bool _HasEndTime;
+
+        private readonly List<float>
+            EventTimes = new();
+
+        /// <summary>The height of the time ticks.</summary>
+        public float TickHeight { get; private set; }
+
+        /************************************************************************************************************************/
+
+        #endregion
+
+        /************************************************************************************************************************/
+
+        #region Conversions
+
+        /************************************************************************************************************************/
+
+        /// <summary>Converts a number of seconds to a horizontal pixel position along the ruler.</summary>
+        /// <remarks>The value is rounded to the nearest integer.</remarks>
+        public float SecondsToPixels(float seconds)
+        {
+            return AnimancerUtilities.Round((seconds - _MinTime) * _SecondsToPixels);
+        }
+
+        /// <summary>Converts a horizontal pixel position along the ruler to a number of seconds.</summary>
+        public float PixelsToSeconds(float pixels)
+        {
+            return pixels / _SecondsToPixels + _MinTime;
+        }
+
+        /// <summary>Converts a number of seconds to a normalized time value.</summary>
+        public float SecondsToNormalized(float seconds)
+        {
+            return seconds / _Duration;
+        }
+
+        /// <summary>Converts a normalized time value to a number of seconds.</summary>
+        public float NormalizedToSeconds(float normalized)
+        {
+            return normalized * _Duration;
+        }
+
+        /************************************************************************************************************************/
+
+        #endregion
+
+        /************************************************************************************************************************/
+
         #region Events
+
         /************************************************************************************************************************/
 
         private void GatherEventTimes(SerializableEventSequenceDrawer.Context context)
@@ -283,9 +311,9 @@ namespace Animancer.Editor
         /************************************************************************************************************************/
 
         private static readonly int EventHash = "Event".GetHashCode();
-        private static readonly List<int> EventControlIDs = new List<int>();
+        private static readonly List<int> EventControlIDs = new();
 
-        /// <summary>Draws the details of the <see cref="SerializableEventSequenceDrawer.Context.Callbacks"/>.</summary>
+        /// <summary>Draws the details of the <see cref="SerializableEventSequenceDrawer.Context.Callbacks" />.</summary>
         private void DoEventsGUI(SerializableEventSequenceDrawer.Context context, out float addEventNormalizedTime)
         {
             addEventNormalizedTime = float.NaN;
@@ -296,7 +324,7 @@ namespace Animancer.Editor
 
             var baseControlID = GUIUtility.GetControlID(EventHash - 1, FocusType.Passive);
 
-            for (int i = 0; i < EventTimes.Count; i++)
+            for (var i = 0; i < EventTimes.Count; i++)
             {
                 var controlID = GUIUtility.GetControlID(EventHash + i, FocusType.Keyboard);
                 EventControlIDs.Add(controlID);
@@ -332,8 +360,7 @@ namespace Animancer.Editor
                     }
                     else
                     {
-                        for (int i = 0; i < EventTimes.Count; i++)
-                        {
+                        for (var i = 0; i < EventTimes.Count; i++)
                             if (hotControl == EventControlIDs[i])
                             {
                                 if (context.Times.Count < 1)
@@ -357,8 +384,8 @@ namespace Animancer.Editor
                                 SetPreviewTime(context, currentEvent);
                                 GUIUtility.ExitGUI();
                             }
-                        }
                     }
+
                     break;
 
                 case EventType.KeyUp:
@@ -380,7 +407,7 @@ namespace Animancer.Editor
 
                         case KeyCode.Space: RoundEventTime(context); break;
 
-                        default: return;// Don't call Use.
+                        default: return; // Don't call Use.
                     }
 
                     currentEvent.Use();
@@ -394,13 +421,11 @@ namespace Animancer.Editor
 
         /************************************************************************************************************************/
 
-        /// <summary>Snaps the `seconds` value to the nearest multiple of the <see cref="AnimationClip.frameRate"/>.</summary>
+        /// <summary>Snaps the `seconds` value to the nearest multiple of the <see cref="AnimationClip.frameRate" />.</summary>
         public void SnapToFrameRate(SerializableEventSequenceDrawer.Context context, ref float seconds)
         {
             if (AnimancerUtilities.TryGetFrameRate(context.TransitionContext.Transition, out var frameRate))
-            {
                 seconds = AnimancerUtilities.Round(seconds, 1f / frameRate);
-            }
         }
 
         /************************************************************************************************************************/
@@ -409,18 +434,14 @@ namespace Animancer.Editor
         {
             var color = GUI.color;
 
-            for (int i = 0; i < EventTimes.Count; i++)
+            for (var i = 0; i < EventTimes.Count; i++)
             {
                 var currentColor = color;
                 // Read Only: currentColor *= new Color(0.9f, 0.9f, 0.9f, 0.5f * alpha);
                 if (context.SelectedEvent == i)
-                {
                     currentColor *= SelectedEventColor;
-                }
                 else
-                {
                     currentColor *= UnselectedEventColor;
-                }
 
                 if (i == EventTimes.Count - 1 && !_HasEndTime)
                     currentColor.a *= 0.65f;
@@ -436,7 +457,8 @@ namespace Animancer.Editor
 
         /************************************************************************************************************************/
 
-        private void OnMouseDown(Event currentEvent, SerializableEventSequenceDrawer.Context context, ref float addEventNormalizedTime)
+        private void OnMouseDown(Event currentEvent, SerializableEventSequenceDrawer.Context context,
+            ref float addEventNormalizedTime)
         {
             if (!_Area.Contains(currentEvent.mousePosition))
                 return;
@@ -444,7 +466,7 @@ namespace Animancer.Editor
             var selectedEventControlID = 0;
             var selectedEvent = -1;
 
-            for (int i = 0; i < EventControlIDs.Count; i++)
+            for (var i = 0; i < EventControlIDs.Count; i++)
             {
                 var area = i < EventTimes.Count ? GetEventIconArea(i) : _Area;
 
@@ -529,7 +551,8 @@ namespace Animancer.Editor
         /************************************************************************************************************************/
 
         private static void AddContextFunction(
-            GenericMenu menu, SerializableEventSequenceDrawer.Context context, string label, bool enabled, Action function)
+            GenericMenu menu, SerializableEventSequenceDrawer.Context context, string label, bool enabled,
+            Action function)
         {
             menu.AddFunction(label, enabled, () =>
             {
@@ -605,7 +628,7 @@ namespace Animancer.Editor
 
         private static bool TryRoundValue(ref float value)
         {
-            var format = System.Globalization.NumberFormatInfo.InvariantInfo;
+            var format = NumberFormatInfo.InvariantInfo;
             var text = value.ToString(format);
             var dot = text.IndexOf('.');
             if (dot < 0)
@@ -625,16 +648,21 @@ namespace Animancer.Editor
                 value = newValue;
                 return true;
             }
-            else return false;
+
+            return false;
         }
 
         /************************************************************************************************************************/
+
         #endregion
-        /************************************************************************************************************************/
-        #region Ticks
+
         /************************************************************************************************************************/
 
-        private static readonly List<float> TickTimes = new List<float>();
+        #region Ticks
+
+        /************************************************************************************************************************/
+
+        private static readonly List<float> TickTimes = new();
 
         /// <summary>Draws ticks and labels for important times throughout the area.</summary>
         private void DoRulerGUI()
@@ -660,7 +688,7 @@ namespace Animancer.Editor
             var previousTime = float.NaN;
             area.x = float.NegativeInfinity;
 
-            for (int i = 0; i < TickTimes.Count; i++)
+            for (var i = 0; i < TickTimes.Count; i++)
             {
                 var time = TickTimes[i];
                 if (previousTime != time)
@@ -682,7 +710,7 @@ namespace Animancer.Editor
                 return;
 
             var normalizedTime = TransitionPreviewWindow.PreviewNormalizedTime;
-            DrawPreviewTime(normalizedTime, alpha: 1);
+            DrawPreviewTime(normalizedTime, 1);
 
             // Looping states show faded indicators at every other multiple of the loop.
             if (!state.IsLooping)
@@ -699,7 +727,7 @@ namespace Animancer.Editor
             // Draw every visible increment from there on.
             while (normalizedTime * _Duration <= _MaxTime)
             {
-                DrawPreviewTime(normalizedTime, alpha: 0.2f);
+                DrawPreviewTime(normalizedTime, 0.2f);
                 normalizedTime += 1;
             }
         }
@@ -729,7 +757,7 @@ namespace Animancer.Editor
                     padding = new RectOffset(),
                     contentOffset = new Vector2(0, -2),
                     alignment = TextAnchor.UpperLeft,
-                    fontSize = Mathf.CeilToInt(AnimancerGUI.LineHeight * 0.6f),
+                    fontSize = Mathf.CeilToInt(AnimancerGUI.LineHeight * 0.6f)
                 };
 
             var text = G2Cache.Convert(time);
@@ -763,10 +791,11 @@ namespace Animancer.Editor
         }
 
         /************************************************************************************************************************/
+
         #endregion
+
         /************************************************************************************************************************/
     }
 }
 
 #endif
-

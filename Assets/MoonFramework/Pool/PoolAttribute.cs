@@ -2,7 +2,7 @@ using System;
 
 namespace MoonFramework.Attribute
 {
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Class)]
     public class PoolAttribute : System.Attribute
     {
     }

@@ -7,21 +7,33 @@ namespace Animancer
 {
     /// <summary>A set of up/right/down/left animations with diagonals as well.</summary>
     /// <remarks>
-    /// Documentation: <see href="https://kybernetik.com.au/animancer/docs/manual/playing/directional-sets">Directional Animation Sets</see>
+    ///     Documentation:
+    ///     <see href="https://kybernetik.com.au/animancer/docs/manual/playing/directional-sets">Directional Animation Sets</see>
     /// </remarks>
     /// https://kybernetik.com.au/animancer/api/Animancer/DirectionalAnimationSet8
-    /// 
-    [CreateAssetMenu(menuName = Strings.MenuPrefix + "Directional Animation Set/8 Directions", order = Strings.AssetMenuOrder + 11)]
+    [CreateAssetMenu(menuName = Strings.MenuPrefix + "Directional Animation Set/8 Directions",
+        order = Strings.AssetMenuOrder + 11)]
     [HelpURL(Strings.DocsURLs.APIDocumentation + "/" + nameof(DirectionalAnimationSet8))]
     public class DirectionalAnimationSet8 : DirectionalAnimationSet
     {
         /************************************************************************************************************************/
 
-        [SerializeField]
-        private AnimationClip _UpRight;
+        [SerializeField] private AnimationClip _UpRight;
 
-        /// <summary>[<see cref="SerializeField"/>] The animation facing diagonally up-right ~(0.7, 0.7).</summary>
-        /// <exception cref="ArgumentException"><see cref="AllowSetClips"/> was not called before setting this value.</exception>
+        /************************************************************************************************************************/
+
+        [SerializeField] private AnimationClip _DownRight;
+
+        /************************************************************************************************************************/
+
+        [SerializeField] private AnimationClip _DownLeft;
+
+        /************************************************************************************************************************/
+
+        [SerializeField] private AnimationClip _UpLeft;
+
+        /// <summary>[<see cref="SerializeField" />] The animation facing diagonally up-right ~(0.7, 0.7).</summary>
+        /// <exception cref="ArgumentException"><see cref="AllowSetClips" /> was not called before setting this value.</exception>
         public AnimationClip UpRight
         {
             get => _UpRight;
@@ -33,13 +45,8 @@ namespace Animancer
             }
         }
 
-        /************************************************************************************************************************/
-
-        [SerializeField]
-        private AnimationClip _DownRight;
-
-        /// <summary>[<see cref="SerializeField"/>] The animation facing diagonally down-right ~(0.7, -0.7).</summary>
-        /// <exception cref="ArgumentException"><see cref="AllowSetClips"/> was not called before setting this value.</exception>
+        /// <summary>[<see cref="SerializeField" />] The animation facing diagonally down-right ~(0.7, -0.7).</summary>
+        /// <exception cref="ArgumentException"><see cref="AllowSetClips" /> was not called before setting this value.</exception>
         public AnimationClip DownRight
         {
             get => _DownRight;
@@ -51,13 +58,8 @@ namespace Animancer
             }
         }
 
-        /************************************************************************************************************************/
-
-        [SerializeField]
-        private AnimationClip _DownLeft;
-
-        /// <summary>[<see cref="SerializeField"/>] The animation facing diagonally down-left ~(-0.7, -0.7).</summary>
-        /// <exception cref="ArgumentException"><see cref="AllowSetClips"/> was not called before setting this value.</exception>
+        /// <summary>[<see cref="SerializeField" />] The animation facing diagonally down-left ~(-0.7, -0.7).</summary>
+        /// <exception cref="ArgumentException"><see cref="AllowSetClips" /> was not called before setting this value.</exception>
         public AnimationClip DownLeft
         {
             get => _DownLeft;
@@ -69,13 +71,8 @@ namespace Animancer
             }
         }
 
-        /************************************************************************************************************************/
-
-        [SerializeField]
-        private AnimationClip _UpLeft;
-
-        /// <summary>[<see cref="SerializeField"/>] The animation facing diagonally up-left ~(-0.7, 0.7).</summary>
-        /// <exception cref="ArgumentException"><see cref="AllowSetClips"/> was not called before setting this value.</exception>
+        /// <summary>[<see cref="SerializeField" />] The animation facing diagonally up-left ~(-0.7, 0.7).</summary>
+        /// <exception cref="ArgumentException"><see cref="AllowSetClips" /> was not called before setting this value.</exception>
         public AnimationClip UpLeft
         {
             get => _UpLeft;
@@ -109,15 +106,46 @@ namespace Animancer
         }
 
         /************************************************************************************************************************/
+
+        #region Name Based Operations
+
+        /************************************************************************************************************************/
+#if UNITY_EDITOR
+        /************************************************************************************************************************/
+
+        public override int SetClipByName(AnimationClip clip)
+        {
+            var name = clip.name;
+
+            var directionCount = ClipCount;
+            for (var i = directionCount - 1; i >= 0; i--)
+                if (name.Contains(GetDirectionName(i)))
+                {
+                    SetClip(i, clip);
+                    return i;
+                }
+
+            return -1;
+        }
+
+        /************************************************************************************************************************/
+#endif
+        /************************************************************************************************************************/
+
+        #endregion
+
+        /************************************************************************************************************************/
+
         #region Directions
+
         /************************************************************************************************************************/
 
         /// <summary>Constants for each of the diagonal directions.</summary>
         /// <remarks>
-        /// Documentation: <see href="https://kybernetik.com.au/animancer/docs/manual/playing/directional-sets">Directional Animation Sets</see>
+        ///     Documentation:
+        ///     <see href="https://kybernetik.com.au/animancer/docs/manual/playing/directional-sets">Directional Animation Sets</see>
         /// </remarks>
         /// https://kybernetik.com.au/animancer/api/Animancer/Diagonals
-        /// 
         public static class Diagonals
         {
             /************************************************************************************************************************/
@@ -127,19 +155,19 @@ namespace Animancer
 
             /// <summary>A vector with a magnitude of 1 pointing up to the right.</summary>
             /// <remarks>The value is approximately (0.7, 0.7).</remarks>
-            public static Vector2 UpRight => new Vector2(OneOverSqrt2, OneOverSqrt2);
+            public static Vector2 UpRight => new(OneOverSqrt2, OneOverSqrt2);
 
             /// <summary>A vector with a magnitude of 1 pointing down to the right.</summary>
             /// <remarks>The value is approximately (0.7, -0.7).</remarks>
-            public static Vector2 DownRight => new Vector2(OneOverSqrt2, -OneOverSqrt2);
+            public static Vector2 DownRight => new(OneOverSqrt2, -OneOverSqrt2);
 
             /// <summary>A vector with a magnitude of 1 pointing down to the left.</summary>
             /// <remarks>The value is approximately (-0.7, -0.7).</remarks>
-            public static Vector2 DownLeft => new Vector2(-OneOverSqrt2, -OneOverSqrt2);
+            public static Vector2 DownLeft => new(-OneOverSqrt2, -OneOverSqrt2);
 
             /// <summary>A vector with a magnitude of 1 pointing up to the left.</summary>
             /// <remarks>The value is approximately (-0.707, 0.707).</remarks>
-            public static Vector2 UpLeft => new Vector2(-OneOverSqrt2, OneOverSqrt2);
+            public static Vector2 UpLeft => new(-OneOverSqrt2, OneOverSqrt2);
 
             /************************************************************************************************************************/
         }
@@ -152,40 +180,43 @@ namespace Animancer
 
         /// <summary>Up, Right, Down, Left, or their diagonals.</summary>
         /// <remarks>
-        /// Documentation: <see href="https://kybernetik.com.au/animancer/docs/manual/playing/directional-sets">Directional Animation Sets</see>
+        ///     Documentation:
+        ///     <see href="https://kybernetik.com.au/animancer/docs/manual/playing/directional-sets">Directional Animation Sets</see>
         /// </remarks>
         /// https://kybernetik.com.au/animancer/api/Animancer/Direction
-        /// 
         public new enum Direction
         {
-            /// <summary><see cref="Vector2.up"/>.</summary>
+            /// <summary><see cref="Vector2.up" />.</summary>
             Up,
 
-            /// <summary><see cref="Vector2.right"/>.</summary>
+            /// <summary><see cref="Vector2.right" />.</summary>
             Right,
 
-            /// <summary><see cref="Vector2.down"/>.</summary>
+            /// <summary><see cref="Vector2.down" />.</summary>
             Down,
 
-            /// <summary><see cref="Vector2.left"/>.</summary>
+            /// <summary><see cref="Vector2.left" />.</summary>
             Left,
 
-            /// <summary><see cref="Vector2"/>(0.7..., 0.7...).</summary>
+            /// <summary><see cref="Vector2" />(0.7..., 0.7...).</summary>
             UpRight,
 
-            /// <summary><see cref="Vector2"/>(0.7..., -0.7...).</summary>
+            /// <summary><see cref="Vector2" />(0.7..., -0.7...).</summary>
             DownRight,
 
-            /// <summary><see cref="Vector2"/>(-0.7..., -0.7...).</summary>
+            /// <summary><see cref="Vector2" />(-0.7..., -0.7...).</summary>
             DownLeft,
 
-            /// <summary><see cref="Vector2"/>(-0.7..., 0.7...).</summary>
-            UpLeft,
+            /// <summary><see cref="Vector2" />(-0.7..., 0.7...).</summary>
+            UpLeft
         }
 
         /************************************************************************************************************************/
 
-        protected override string GetDirectionName(int direction) => ((Direction)direction).ToString();
+        protected override string GetDirectionName(int direction)
+        {
+            return ((Direction)direction).ToString();
+        }
 
         /************************************************************************************************************************/
 
@@ -206,7 +237,10 @@ namespace Animancer
             }
         }
 
-        public override AnimationClip GetClip(int direction) => GetClip((Direction)direction);
+        public override AnimationClip GetClip(int direction)
+        {
+            return GetClip((Direction)direction);
+        }
 
         /************************************************************************************************************************/
 
@@ -227,7 +261,10 @@ namespace Animancer
             }
         }
 
-        public override void SetClip(int direction, AnimationClip clip) => SetClip((Direction)direction, clip);
+        public override void SetClip(int direction, AnimationClip clip)
+        {
+            SetClip((Direction)direction, clip);
+        }
 
         /************************************************************************************************************************/
 
@@ -248,7 +285,10 @@ namespace Animancer
             }
         }
 
-        public override Vector2 GetDirection(int direction) => DirectionToVector((Direction)direction);
+        public override Vector2 GetDirection(int direction)
+        {
+            return DirectionToVector((Direction)direction);
+        }
 
         /************************************************************************************************************************/
 
@@ -282,37 +322,15 @@ namespace Animancer
             return vector;
         }
 
-        public override Vector2 Snap(Vector2 vector) => SnapVectorToDirection(vector);
-
-        /************************************************************************************************************************/
-        #endregion
-        /************************************************************************************************************************/
-        #region Name Based Operations
-        /************************************************************************************************************************/
-#if UNITY_EDITOR
-        /************************************************************************************************************************/
-
-        public override int SetClipByName(AnimationClip clip)
+        public override Vector2 Snap(Vector2 vector)
         {
-            var name = clip.name;
-
-            var directionCount = ClipCount;
-            for (int i = directionCount - 1; i >= 0; i--)
-            {
-                if (name.Contains(GetDirectionName(i)))
-                {
-                    SetClip(i, clip);
-                    return i;
-                }
-            }
-
-            return -1;
+            return SnapVectorToDirection(vector);
         }
 
         /************************************************************************************************************************/
-#endif
-        /************************************************************************************************************************/
+
         #endregion
+
         /************************************************************************************************************************/
     }
 }

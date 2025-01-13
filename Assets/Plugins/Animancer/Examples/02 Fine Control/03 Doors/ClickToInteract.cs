@@ -5,12 +5,13 @@ using UnityEngine;
 namespace Animancer.Examples.FineControl
 {
     /// <summary>
-    /// Attempts to interact with whatever <see cref="IInteractable"/> the cursor is pointing at when the user clicks
-    /// the mouse.
+    ///     Attempts to interact with whatever <see cref="IInteractable" /> the cursor is pointing at when the user clicks
+    ///     the mouse.
     /// </summary>
-    /// <example><see href="https://kybernetik.com.au/animancer/docs/examples/fine-control/doors">Doors</see></example>
+    /// <example>
+    ///     <see href="https://kybernetik.com.au/animancer/docs/examples/fine-control/doors">Doors</see>
+    /// </example>
     /// https://kybernetik.com.au/animancer/api/Animancer.Examples.FineControl/ClickToInteract
-    /// 
     [AddComponentMenu(Strings.ExamplesMenuPrefix + "Fine Control - Click To Interact")]
     [HelpURL(Strings.DocsURLs.ExampleAPIDocumentation + nameof(FineControl) + "/" + nameof(ClickToInteract))]
     public sealed class ClickToInteract : MonoBehaviour

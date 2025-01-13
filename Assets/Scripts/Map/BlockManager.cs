@@ -8,27 +8,27 @@ namespace MoonFramework.Test
 {
     public class BlockManager
     {
-        private readonly int mapSize; // 一行或者一列有多少个地图块
-        private readonly int mapChunkSize; // 一个地图块有多少个格子
         private readonly float cellSize; // 一个格子多少米
-        private readonly float noiseLacunarity; // 噪音间隙
-        private readonly int mapSeed; // 地图种子
-        private readonly int spawnSeed; // 随时地图对象的种子
-        private readonly float marshLimit; // 沼泽的边界
-        private MapGrid mapGrid; // 地图逻辑网格、顶点数据
-        private readonly Material mapMaterial;
-        private Material marshMaterial;
-        private Mesh chunkMesh;
-
-        private readonly Texture2D[] marshTextures;
-        private readonly Texture2D forestTexutre;
-        private readonly Texture2D[] mapTexture = new Texture2D[16];
-        private readonly Dictionary<MapVertexType, List<int>> spawnConfigs;
-        private readonly Dictionary<int, int>[] RandValues = new Dictionary<int, int>[2];
         private readonly List<int> configIDSetForest;
         private readonly List<int> configIDSetMarsh;
+        private readonly Texture2D forestTexutre;
+        private readonly int mapChunkSize; // 一个地图块有多少个格子
+        private readonly Material mapMaterial;
+        private readonly int mapSeed; // 地图种子
+        private readonly int mapSize; // 一行或者一列有多少个地图块
+        private readonly Texture2D[] mapTexture = new Texture2D[16];
+        private readonly float marshLimit; // 沼泽的边界
+
+        private readonly Texture2D[] marshTextures;
+        private readonly float noiseLacunarity; // 噪音间隙
+        private readonly Dictionary<int, int>[] RandValues = new Dictionary<int, int>[2];
+        private readonly Dictionary<MapVertexType, List<int>> spawnConfigs;
+        private readonly int spawnSeed; // 随时地图对象的种子
+        private Mesh chunkMesh;
 
         private int forestSpawnWeightTotal;
+        private MapGrid mapGrid; // 地图逻辑网格、顶点数据
+        private Material marshMaterial;
         private int marshSpawnWeightTotal;
 
         public BlockManager(int mapSize, int mapChunkSize, float cellSize, float noiseLacunarity, int mapSeed,
@@ -125,7 +125,7 @@ namespace MoonFramework.Test
         {
             // 生成地图块物体
             GameObject mapBlockObj = new("Chunk_" + chunkIndex);
-            BaseMapBlock mapBlock = mapBlockObj.AddComponent<BaseMapBlock>();
+            var mapBlock = mapBlockObj.AddComponent<BaseMapBlock>();
 
             if (!chunkMesh)
                 chunkMesh = this.MoonObjGetPool(() => CreateMesh(mapChunkSize, mapChunkSize, cellSize), nameof(Mesh));
@@ -164,7 +164,7 @@ namespace MoonFramework.Test
                 var mapConfigModels = SpawnMapObject(chunkIndex);
                 //初始化地图块
                 mapBlock.Init(chunkIndex, position + mapChunkSize * cellSize / 2 * (Vector3.right + Vector3.forward),
-                                                                                 isAllForest, mapConfigModels, timeLimit);
+                    isAllForest, mapConfigModels, timeLimit);
             });
 
             return mapBlock;
@@ -306,8 +306,9 @@ namespace MoonFramework.Test
                 if (t[mid] > value) r = mid - 1;
                 else l = mid;
             }
+
             var res = t[r];
-            
+
             l = 0;
             while (l < r)
             {

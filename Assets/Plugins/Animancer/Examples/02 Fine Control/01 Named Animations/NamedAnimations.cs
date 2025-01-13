@@ -8,11 +8,12 @@ using UnityEngine;
 namespace Animancer.Examples.FineControl
 {
     /// <summary>
-    /// Demonstrates how to use a <see cref="NamedAnimancerComponent"/> to play animations by name.
+    ///     Demonstrates how to use a <see cref="NamedAnimancerComponent" /> to play animations by name.
     /// </summary>
-    /// <example><see href="https://kybernetik.com.au/animancer/docs/examples/fine-control/named-animations">Named Animations</see></example>
+    /// <example>
+    ///     <see href="https://kybernetik.com.au/animancer/docs/examples/fine-control/named-animations">Named Animations</see>
+    /// </example>
     /// https://kybernetik.com.au/animancer/api/Animancer.Examples.FineControl/NamedAnimations
-    /// 
     [AddComponentMenu(Strings.ExamplesMenuPrefix + "Fine Control - Named Animations")]
     [HelpURL(Strings.DocsURLs.ExampleAPIDocumentation + nameof(FineControl) + "/" + nameof(NamedAnimations))]
     public sealed class NamedAnimations : MonoBehaviour
@@ -29,11 +30,11 @@ namespace Animancer.Examples.FineControl
 
         // Called by a UI Button.
         /// <summary>
-        /// Plays the idle animation by name. This requires the animation to already have a state in the
-        /// <see cref="NamedAnimancerComponent"/>, which has already been done in this example by adding it to the
-        /// <see cref="NamedAnimancerComponent.Animations"/> list in the Inspector.
-        /// <para></para>
-        /// If it has not been added, this method will simply do nothing.
+        ///     Plays the idle animation by name. This requires the animation to already have a state in the
+        ///     <see cref="NamedAnimancerComponent" />, which has already been done in this example by adding it to the
+        ///     <see cref="NamedAnimancerComponent.Animations" /> list in the Inspector.
+        ///     <para></para>
+        ///     If it has not been added, this method will simply do nothing.
         /// </summary>
         public void PlayIdle()
         {
@@ -46,9 +47,9 @@ namespace Animancer.Examples.FineControl
 
         // Called by a UI Button.
         /// <summary>
-        /// Plays the walk animation by name. Unlike the idle animation, this one has not been added to the
-        /// Inspector list so it will not exist and this method will log a warning unless you call
-        /// <see cref="InitializeWalkState"/> first.
+        ///     Plays the walk animation by name. Unlike the idle animation, this one has not been added to the
+        ///     Inspector list so it will not exist and this method will log a warning unless you call
+        ///     <see cref="InitializeWalkState" /> first.
         /// </summary>
         public void PlayWalk()
         {
@@ -66,18 +67,18 @@ namespace Animancer.Examples.FineControl
 
         // Called by a UI Button.
         /// <summary>
-        /// Creates a state for the walk animation so that <see cref="PlayWalk"/> can play it.
+        ///     Creates a state for the walk animation so that <see cref="PlayWalk" /> can play it.
         /// </summary>
         /// <remarks>
-        /// Calling this method more than once will throw an <see cref="ArgumentException"/> because a state already
-        /// exists with the key it's trying to use (the animation's name).
-        /// <para></para>
-        /// If we wanted to allow repeated calls we could use
-        /// <see cref="AnimancerLayer.GetOrCreateState(AnimationClip, bool)"/> instead, which would create a state the
-        /// first time then return the same one every time after that.
-        /// <para></para>
-        /// If we wanted to actually create multiple states for the same animation, we would have to use the optional
-        /// `key` parameter to specify a different key for each of them.
+        ///     Calling this method more than once will throw an <see cref="ArgumentException" /> because a state already
+        ///     exists with the key it's trying to use (the animation's name).
+        ///     <para></para>
+        ///     If we wanted to allow repeated calls we could use
+        ///     <see cref="AnimancerLayer.GetOrCreateState(AnimationClip, bool)" /> instead, which would create a state the
+        ///     first time then return the same one every time after that.
+        ///     <para></para>
+        ///     If we wanted to actually create multiple states for the same animation, we would have to use the optional
+        ///     `key` parameter to specify a different key for each of them.
         /// </remarks>
         public void InitializeWalkState()
         {
@@ -91,9 +92,9 @@ namespace Animancer.Examples.FineControl
 
         // Called by a UI Button.
         /// <summary>
-        /// Plays the run animation using a direct reference to show that the ability to play animations by
-        /// name in a <see cref="NamedAnimancerComponent"/> does not prevent it from also using direct references like
-        /// the base <see cref="AnimancerComponent"/>.
+        ///     Plays the run animation using a direct reference to show that the ability to play animations by
+        ///     name in a <see cref="NamedAnimancerComponent" /> does not prevent it from also using direct references like
+        ///     the base <see cref="AnimancerComponent" />.
         /// </summary>
         public void PlayRun()
         {

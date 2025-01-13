@@ -7,9 +7,10 @@ using UnityEngine;
 namespace Animancer.Examples.FineControl
 {
     /// <summary>Demonstrates how to save some performance by updating Animancer less often.</summary>
-    /// <example><see href="https://kybernetik.com.au/animancer/docs/examples/fine-control/update-rate">Update Rate</see></example>
+    /// <example>
+    ///     <see href="https://kybernetik.com.au/animancer/docs/examples/fine-control/update-rate">Update Rate</see>
+    /// </example>
     /// https://kybernetik.com.au/animancer/api/Animancer.Examples.FineControl/LowUpdateRate
-    /// 
     [AddComponentMenu(Strings.ExamplesMenuPrefix + "Fine Control - Low Update Rate")]
     [HelpURL(Strings.DocsURLs.ExampleAPIDocumentation + nameof(FineControl) + "/" + nameof(LowUpdateRate))]
     public sealed class LowUpdateRate : MonoBehaviour
@@ -26,6 +27,19 @@ namespace Animancer.Examples.FineControl
         private float _LastUpdateTime;
 
         /************************************************************************************************************************/
+
+        private void Update()
+        {
+            var time = Time.time;
+            var timeSinceLastUpdate = time - _LastUpdateTime;
+            if (timeSinceLastUpdate > 1 / _UpdatesPerSecond)
+            {
+                _Animancer.Evaluate(timeSinceLastUpdate);
+                _LastUpdateTime = time;
+            }
+        }
+
+        /************************************************************************************************************************/
         // The DynamicUpdateRate script will enable and disable this script.
         /************************************************************************************************************************/
 
@@ -37,24 +51,10 @@ namespace Animancer.Examples.FineControl
 
         private void OnDisable()
         {
-
             // This will get called when destroying the object as well (such as when loading a different scene).
             // So we need to make sure the AnimancerComponent still exists and is still initialized.
             if (_Animancer != null && _Animancer.IsPlayableInitialized)
                 _Animancer.Playable.UnpauseGraph();
-        }
-
-        /************************************************************************************************************************/
-
-        private void Update()
-        {
-            var time = Time.time;
-            var timeSinceLastUpdate = time - _LastUpdateTime;
-            if (timeSinceLastUpdate > 1 / _UpdatesPerSecond)
-            {
-                _Animancer.Evaluate(timeSinceLastUpdate);
-                _LastUpdateTime = time;
-            }
         }
 
         /************************************************************************************************************************/

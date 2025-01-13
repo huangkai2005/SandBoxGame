@@ -10,9 +10,8 @@ using UnityEngine;
 
 namespace Animancer.Editor
 {
-    /// <summary>[Editor-Only] The general type of object an <see cref="AnimationClip"/> can animate.</summary>
+    /// <summary>[Editor-Only] The general type of object an <see cref="AnimationClip" /> can animate.</summary>
     /// https://kybernetik.com.au/animancer/api/Animancer.Editor/AnimationType
-    /// 
     public enum AnimationType
     {
         /// <summary>Unable to determine a type.</summary>
@@ -24,114 +23,36 @@ namespace Animancer.Editor
         /// <summary>A Generic rig.</summary>
         Generic,
 
-        /// <summary>A <see cref="Generic"/> rig which only animates a <see cref="SpriteRenderer.sprite"/>.</summary>
-        Sprite,
+        /// <summary>A <see cref="Generic" /> rig which only animates a <see cref="SpriteRenderer.sprite" />.</summary>
+        Sprite
     }
 
-    /// <summary>[Editor-Only]
-    /// Various utility functions relating to the properties animated by an <see cref="AnimationClip"/>.
+    /// <summary>
+    ///     [Editor-Only]
+    ///     Various utility functions relating to the properties animated by an <see cref="AnimationClip" />.
     /// </summary>
     /// https://kybernetik.com.au/animancer/api/Animancer.Editor/AnimationBindings
-    /// 
     public class AnimationBindings : AssetPostprocessor
     {
         /************************************************************************************************************************/
-        #region Animation Types
-        /************************************************************************************************************************/
-
-        private static Dictionary<AnimationClip, bool> _ClipToIsSprite;
-
-        /// <summary>Determines the <see cref="AnimationType"/> of the specified `clip`.</summary>
-        public static AnimationType GetAnimationType(AnimationClip clip)
-        {
-            if (clip == null)
-                return AnimationType.None;
-
-            if (clip.isHumanMotion)
-                return AnimationType.Humanoid;
-
-            AnimancerEditorUtilities.InitializeCleanDictionary(ref _ClipToIsSprite);
-
-            if (!_ClipToIsSprite.TryGetValue(clip, out var isSprite))
-            {
-                var bindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
-                for (int i = 0; i < bindings.Length; i++)
-                {
-                    var binding = bindings[i];
-                    if (binding.type == typeof(SpriteRenderer) &&
-                        binding.propertyName == "m_Sprite")
-                    {
-                        isSprite = true;
-                        break;
-                    }
-                }
-
-                _ClipToIsSprite.Add(clip, isSprite);
-            }
-
-            return isSprite ? AnimationType.Sprite : AnimationType.Generic;
-        }
-
-        /************************************************************************************************************************/
-
-        /// <summary>Determines the <see cref="AnimationType"/> of the specified `animator`.</summary>
-        public static AnimationType GetAnimationType(Animator animator)
-        {
-            if (animator == null)
-                return AnimationType.None;
-
-            if (animator.isHuman)
-                return AnimationType.Humanoid;
-
-            // If all renderers are SpriteRenderers, it's a Sprite animation.
-            // Otherwise it's Generic.
-            var renderers = animator.GetComponentsInChildren<Renderer>();
-            if (renderers.Length == 0)
-                return AnimationType.Generic;
-
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                if (!(renderers[i] is SpriteRenderer))
-                    return AnimationType.Generic;
-            }
-
-            return AnimationType.Sprite;
-        }
-
-        /************************************************************************************************************************/
-
-        /// <summary>Determines the <see cref="AnimationType"/> of the specified `gameObject`.</summary>
-        public static AnimationType GetAnimationType(GameObject gameObject)
-        {
-            var type = AnimationType.None;
-            var animators = gameObject.GetComponentsInChildren<Animator>();
-            for (int i = 0; i < animators.Length; i++)
-            {
-                var animatorType = GetAnimationType(animators[i]);
-                switch (animatorType)
-                {
-                    case AnimationType.Humanoid: return AnimationType.Humanoid;
-                    case AnimationType.Generic: return AnimationType.Generic;
-
-                    case AnimationType.Sprite:
-                        if (type == AnimationType.None)
-                            type = AnimationType.Sprite;
-                        break;
-
-                    case AnimationType.None:
-                    default:
-                        break;
-                }
-            }
-
-            return type;
-        }
-
-        /************************************************************************************************************************/
-        #endregion
-        /************************************************************************************************************************/
 
         private static bool _CanGatherBindings = true;
+
+        /************************************************************************************************************************/
+
+        private static Dictionary<GameObject, BindingData> _ObjectToBindings;
+
+        /************************************************************************************************************************/
+
+        private static Dictionary<AnimationClip, EditorCurveBinding[]> _ClipToBindings;
+
+        /************************************************************************************************************************/
+
+        /// <summary>Called when Unity imports an animation.</summary>
+        protected virtual void OnPostprocessAnimation(GameObject root, AnimationClip clip)
+        {
+            OnAnimationChanged(clip);
+        }
 
         /// <summary>No more than one set of bindings should be gathered per frame.</summary>
         private static bool CanGatherBindings()
@@ -144,12 +65,8 @@ namespace Animancer.Editor
             return true;
         }
 
-        /************************************************************************************************************************/
-
-        private static Dictionary<GameObject, BindingData> _ObjectToBindings;
-
-        /// <summary>Returns a cached <see cref="BindingData"/> representing the specified `gameObject`.</summary>
-        /// <remarks>Note that the cache is cleared by <see cref="EditorApplication.hierarchyChanged"/>.</remarks>
+        /// <summary>Returns a cached <see cref="BindingData" /> representing the specified `gameObject`.</summary>
+        /// <remarks>Note that the cache is cleared by <see cref="EditorApplication.hierarchyChanged" />.</remarks>
         public static BindingData GetBindings(GameObject gameObject, bool forceGather = true)
         {
             AnimancerEditorUtilities.InitializeCleanDictionary(ref _ObjectToBindings);
@@ -165,10 +82,6 @@ namespace Animancer.Editor
 
             return bindings;
         }
-
-        /************************************************************************************************************************/
-
-        private static Dictionary<AnimationClip, EditorCurveBinding[]> _ClipToBindings;
 
         /// <summary>Returns a cached array of all properties animated by the specified `clip`.</summary>
         public static EditorCurveBinding[] GetBindings(AnimationClip clip)
@@ -187,12 +100,6 @@ namespace Animancer.Editor
 
             return bindings;
         }
-
-        /************************************************************************************************************************/
-
-        /// <summary>Called when Unity imports an animation.</summary>
-        protected virtual void OnPostprocessAnimation(GameObject root, AnimationClip clip)
-            => OnAnimationChanged(clip);
 
         /// <summary>Clears any cached values relating to the `clip` since they may no longer be correct.</summary>
         public static void OnAnimationChanged(AnimationClip clip)
@@ -217,25 +124,41 @@ namespace Animancer.Editor
         /************************************************************************************************************************/
 
         /// <summary>
-        /// A collection of data about the properties on a <see cref="UnityEngine.GameObject"/> and its children
-        /// which can be animated and the relationships between those properties and the properties that individual
-        /// <see cref="AnimationClip"/>s are trying to animate.
+        ///     A collection of data about the properties on a <see cref="UnityEngine.GameObject" /> and its children
+        ///     which can be animated and the relationships between those properties and the properties that individual
+        ///     <see cref="AnimationClip" />s are trying to animate.
         /// </summary>
         public class BindingData
         {
             /************************************************************************************************************************/
 
+            private const string LinePrefix = "- ";
+            /************************************************************************************************************************/
+
             /// <summary>The target object that this data represents.</summary>
             public readonly GameObject GameObject;
 
-            /// <summary>Creates a new <see cref="BindingData"/> representing the specified `gameObject`.</summary>
-            public BindingData(GameObject gameObject) => GameObject = gameObject;
+            private Dictionary<AnimationClip, MatchType> _BindingMatches;
+
+            /************************************************************************************************************************/
+
+            private HashSet<EditorCurveBinding> _ObjectBindings;
+
+            /************************************************************************************************************************/
+
+            private HashSet<string> _ObjectTransformBindings;
 
             /************************************************************************************************************************/
 
             private AnimationType? _ObjectType;
 
-            /// <summary>The cached <see cref="AnimationType"/> of the <see cref="GameObject"/>.</summary>
+            /// <summary>Creates a new <see cref="BindingData" /> representing the specified `gameObject`.</summary>
+            public BindingData(GameObject gameObject)
+            {
+                GameObject = gameObject;
+            }
+
+            /// <summary>The cached <see cref="AnimationType" /> of the <see cref="GameObject" />.</summary>
             public AnimationType ObjectType
             {
                 get
@@ -246,11 +169,7 @@ namespace Animancer.Editor
                 }
             }
 
-            /************************************************************************************************************************/
-
-            private HashSet<EditorCurveBinding> _ObjectBindings;
-
-            /// <summary>The cached properties of the <see cref="GameObject"/> and its children which can be animated.</summary>
+            /// <summary>The cached properties of the <see cref="GameObject" /> and its children which can be animated.</summary>
             public HashSet<EditorCurveBinding> ObjectBindings
             {
                 get
@@ -259,7 +178,7 @@ namespace Animancer.Editor
                     {
                         _ObjectBindings = new HashSet<EditorCurveBinding>();
                         var transforms = GameObject.GetComponentsInChildren<Transform>();
-                        for (int i = 0; i < transforms.Length; i++)
+                        for (var i = 0; i < transforms.Length; i++)
                         {
                             var bindings = AnimationUtility.GetAnimatableBindings(transforms[i].gameObject, GameObject);
                             _ObjectBindings.UnionWith(bindings);
@@ -270,13 +189,9 @@ namespace Animancer.Editor
                 }
             }
 
-            /************************************************************************************************************************/
-
-            private HashSet<string> _ObjectTransformBindings;
-
             /// <summary>
-            /// The <see cref="EditorCurveBinding.path"/> of all <see cref="Transform"/> bindings in
-            /// <see cref="ObjectBindings"/>.
+            ///     The <see cref="EditorCurveBinding.path" /> of all <see cref="Transform" /> bindings in
+            ///     <see cref="ObjectBindings" />.
             /// </summary>
             public HashSet<string> ObjectTransformBindings
             {
@@ -286,10 +201,8 @@ namespace Animancer.Editor
                     {
                         _ObjectTransformBindings = new HashSet<string>();
                         foreach (var binding in ObjectBindings)
-                        {
                             if (binding.type == typeof(Transform))
                                 _ObjectTransformBindings.Add(binding.path);
-                        }
                     }
 
                     return _ObjectTransformBindings;
@@ -299,13 +212,14 @@ namespace Animancer.Editor
             /************************************************************************************************************************/
 
             /// <summary>
-            /// Determines the <see cref="MatchType"/> representing the properties animated by the `state` in
-            /// comparison to the properties that actually exist on the target <see cref="GameObject"/> and its
-            /// children.
-            /// <para></para>
-            /// Also compiles a `message` explaining the differences if that paraneter is not null.
+            ///     Determines the <see cref="MatchType" /> representing the properties animated by the `state` in
+            ///     comparison to the properties that actually exist on the target <see cref="GameObject" /> and its
+            ///     children.
+            ///     <para></para>
+            ///     Also compiles a `message` explaining the differences if that paraneter is not null.
             /// </summary>
-            public MatchType GetMatchType(Animator animator, AnimancerState state, StringBuilder message, bool forceGather = true)
+            public MatchType GetMatchType(Animator animator, AnimancerState state, StringBuilder message,
+                bool forceGather = true)
             {
                 using (ObjectPool.Disposable.AcquireSet<AnimationClip>(out var clips))
                 {
@@ -338,21 +252,16 @@ namespace Animancer.Editor
                 }
             }
 
-            /************************************************************************************************************************/
-
-            private const string LinePrefix = "- ";
-
-            private Dictionary<AnimationClip, MatchType> _BindingMatches;
-
             /// <summary>
-            /// Determines the <see cref="MatchType"/> representing the properties animated by the `clip` in
-            /// comparison to the properties that actually exist on the target <see cref="GameObject"/> and its
-            /// children.
-            /// <para></para>
-            /// Also compiles a `message` explaining the differences if that paraneter is not null.
+            ///     Determines the <see cref="MatchType" /> representing the properties animated by the `clip` in
+            ///     comparison to the properties that actually exist on the target <see cref="GameObject" /> and its
+            ///     children.
+            ///     <para></para>
+            ///     Also compiles a `message` explaining the differences if that paraneter is not null.
             /// </summary>
             public MatchType GetMatchType(AnimationClip clip, StringBuilder message,
-                Dictionary<EditorCurveBinding, bool> bindingsInMessage, ref int existingBindings, bool forceGather = true)
+                Dictionary<EditorCurveBinding, bool> bindingsInMessage, ref int existingBindings,
+                bool forceGather = true)
             {
                 AnimancerEditorUtilities.InitializeCleanDictionary(ref _BindingMatches);
 
@@ -374,7 +283,7 @@ namespace Animancer.Editor
                     {
                         message.AppendLine()
                             .Append($"{LinePrefix}This message does not necessarily mean anything is wrong," +
-                            $" but if something is wrong then this might help you identify the problem.");
+                                    " but if something is wrong then this might help you identify the problem.");
 
                         message.AppendLine()
                             .Append($"{LinePrefix}The {nameof(AnimationType)} of the '")
@@ -386,7 +295,7 @@ namespace Animancer.Editor
                             .Append("' Rig is ")
                             .Append(objectType)
                             .Append(". See the documentation for more information about Animation Types:" +
-                                $" {Strings.DocsURLs.Inspector}#animation-types");
+                                    $" {Strings.DocsURLs.Inspector}#animation-types");
                     }
 
                     switch (clipType)
@@ -397,8 +306,7 @@ namespace Animancer.Editor
                             match = MatchType.Error;
                             if (message == null)
                                 goto SetMatch;
-                            else
-                                break;
+                            break;
 
                         case AnimationType.Generic:
                         case AnimationType.Sprite:
@@ -428,7 +336,7 @@ namespace Animancer.Editor
                 var bindingCount = bindings.Length;
 
                 var matchCount = 0;
-                for (int i = 0; i < bindings.Length; i++)
+                for (var i = 0; i < bindings.Length; i++)
                 {
                     var binding = bindings[i];
                     if (ShouldIgnoreBinding(binding))
@@ -451,10 +359,9 @@ namespace Animancer.Editor
 
                 if (matchCount == bindingCount)
                     return MatchType.Correct;
-                else if (matchCount != 0)
+                if (matchCount != 0)
                     return MatchType.Warning;
-                else
-                    return MatchType.Error;
+                return MatchType.Error;
             }
 
             /************************************************************************************************************************/
@@ -462,7 +369,6 @@ namespace Animancer.Editor
             private static bool ShouldIgnoreBinding(EditorCurveBinding binding)
             {
                 if (binding.type == typeof(Animator) && string.IsNullOrEmpty(binding.path))
-                {
                     switch (binding.propertyName)
                     {
                         case "RootQ.w":
@@ -476,7 +382,6 @@ namespace Animancer.Editor
 
                             return true;
                     }
-                }
 
                 return false;
             }
@@ -486,7 +391,6 @@ namespace Animancer.Editor
             private bool MatchesObjectBinding(EditorCurveBinding binding)
             {
                 if (binding.type == typeof(Transform))
-                {
                     switch (binding.propertyName)
                     {
                         case "m_LocalEulerAngles.x":
@@ -497,14 +401,14 @@ namespace Animancer.Editor
                         case "localEulerAnglesRaw.z":
                             return ObjectTransformBindings.Contains(binding.path);
                     }
-                }
 
                 return ObjectBindings.Contains(binding);
             }
 
             /************************************************************************************************************************/
 
-            private static void AppendBindings(StringBuilder message, Dictionary<EditorCurveBinding, bool> bindings, int existingBindings)
+            private static void AppendBindings(StringBuilder message, Dictionary<EditorCurveBinding, bool> bindings,
+                int existingBindings)
             {
                 if (bindings == null ||
                     bindings.Count <= existingBindings)
@@ -512,7 +416,7 @@ namespace Animancer.Editor
 
                 message.AppendLine()
                     .Append(LinePrefix + "This message has been copied to the clipboard" +
-                    " (in case it is too long for Unity to display in the Console).");
+                            " (in case it is too long for Unity to display in the Console).");
 
                 message.AppendLine()
                     .Append(LinePrefix)
@@ -534,7 +438,7 @@ namespace Animancer.Editor
                         {
                             if (a.type == typeof(Transform))
                                 return -1;
-                            else if (b.type == typeof(Transform))
+                            if (b.type == typeof(Transform))
                                 return 1;
 
                             result = a.type.Name.CompareTo(b.type.Name);
@@ -548,7 +452,7 @@ namespace Animancer.Editor
                     var previousBinding = default(EditorCurveBinding);
                     var pathSplit = Array.Empty<string>();
 
-                    for (int iBinding = 0; iBinding < sortedBindings.Count; iBinding++)
+                    for (var iBinding = 0; iBinding < sortedBindings.Count; iBinding++)
                     {
                         var binding = sortedBindings[iBinding];
                         if (binding.path != previousBinding.path)
@@ -558,24 +462,20 @@ namespace Animancer.Editor
                             var iSegment = Math.Min(newPathSplit.Length - 1, pathSplit.Length - 1);
 
                             for (; iSegment >= 0; iSegment--)
-                            {
                                 if (pathSplit[iSegment] == newPathSplit[iSegment])
                                     break;
-                            }
                             iSegment++;
 
                             if (!string.IsNullOrEmpty(binding.path))
-                            {
                                 for (; iSegment < newPathSplit.Length; iSegment++)
                                 {
                                     message.AppendLine();
 
-                                    for (int iIndent = 0; iIndent < iSegment; iIndent++)
+                                    for (var iIndent = 0; iIndent < iSegment; iIndent++)
                                         message.Append(Strings.Indent);
 
                                     message.Append("> ").Append(newPathSplit[iSegment]);
                                 }
-                            }
 
                             pathSplit = newPathSplit;
                         }
@@ -586,7 +486,7 @@ namespace Animancer.Editor
                         message.AppendLine();
 
                         if (binding.path.Length > 0)
-                            for (int iIndent = 0; iIndent < pathSplit.Length; iIndent++)
+                            for (var iIndent = 0; iIndent < pathSplit.Length; iIndent++)
                                 message.Append(Strings.Indent);
 
                         message
@@ -602,193 +502,9 @@ namespace Animancer.Editor
 
             /************************************************************************************************************************/
 
-            private static class TransformBindings
-            {
-                [Flags]
-                private enum Flags
-                {
-                    None = 0,
-
-                    PositionX = 1 << 0,
-                    PositionY = 1 << 1,
-                    PositionZ = 1 << 2,
-
-                    RotationX = 1 << 3,
-                    RotationY = 1 << 4,
-                    RotationZ = 1 << 5,
-                    RotationW = 1 << 6,
-
-                    EulerX = 1 << 7,
-                    EulerY = 1 << 8,
-                    EulerZ = 1 << 9,
-
-                    ScaleX = 1 << 10,
-                    ScaleY = 1 << 11,
-                    ScaleZ = 1 << 12,
-                }
-
-                private static bool HasAll(Flags flag, Flags has) => (flag & has) == has;
-
-                private static bool HasAny(Flags flag, Flags has) => (flag & has) != Flags.None;
-
-                /************************************************************************************************************************/
-
-                private static readonly Flags[]
-                    PositionFlags = { Flags.PositionX, Flags.PositionY, Flags.PositionZ },
-                    RotationFlags = { Flags.RotationX, Flags.RotationY, Flags.RotationZ, Flags.RotationW },
-                    EulerFlags = { Flags.EulerX, Flags.EulerY, Flags.EulerZ },
-                    ScaleFlags = { Flags.ScaleX, Flags.ScaleY, Flags.ScaleZ };
-
-                /************************************************************************************************************************/
-
-                public static bool Append(Dictionary<EditorCurveBinding, bool> bindings,
-                    List<EditorCurveBinding> sortedBindings, ref int index, StringBuilder message)
-                {
-                    var binding = sortedBindings[index];
-                    if (binding.type != typeof(Transform))
-                        return false;
-
-                    if (string.IsNullOrEmpty(binding.path))
-                        message.AppendLine().Append('>');
-                    else
-                        message.Append(':');
-
-                    using (ObjectPool.Disposable.AcquireList<EditorCurveBinding>(out var otherBindings))
-                    {
-                        var flags = GetFlags(bindings, sortedBindings, ref index, otherBindings, out var anyExists);
-
-                        message.Append(anyExists ? " [o]" : " [x]");
-
-                        var first = true;
-
-                        AppendProperty(message, ref first, flags, PositionFlags, "position", "xyz");
-                        AppendProperty(message, ref first, flags, RotationFlags, "rotation", "wxyz");
-                        AppendProperty(message, ref first, flags, EulerFlags, "euler", "xyz");
-                        AppendProperty(message, ref first, flags, ScaleFlags, "scale", "xyz");
-
-                        for (int i = 0; i < otherBindings.Count; i++)
-                        {
-                            if (anyExists)
-                                message.Append(',');
-
-                            binding = otherBindings[i];
-                            message
-                                .Append(" [")
-                                .Append(bindings[binding] ? 'o' : 'x')
-                                .Append("] ")
-                                .Append(binding.propertyName);
-                        }
-                    }
-
-                    return true;
-                }
-
-                /************************************************************************************************************************/
-
-                private static Flags GetFlags(Dictionary<EditorCurveBinding, bool> bindings,
-                    List<EditorCurveBinding> sortedBindings, ref int index, List<EditorCurveBinding> otherBindings, out bool anyExists)
-                {
-                    var flags = Flags.None;
-                    anyExists = false;
-
-                    var binding = sortedBindings[index];
-
-                    CheckFlags:
-
-                    switch (binding.propertyName)
-                    {
-                        case "m_LocalPosition.x": flags |= Flags.PositionX; break;
-                        case "m_LocalPosition.y": flags |= Flags.PositionY; break;
-                        case "m_LocalPosition.z": flags |= Flags.PositionZ; break;
-                        case "m_LocalRotation.x": flags |= Flags.RotationX; break;
-                        case "m_LocalRotation.y": flags |= Flags.RotationY; break;
-                        case "m_LocalRotation.z": flags |= Flags.RotationZ; break;
-                        case "m_LocalRotation.w": flags |= Flags.RotationW; break;
-                        case "m_LocalEulerAngles.x": flags |= Flags.EulerX; break;
-                        case "m_LocalEulerAngles.y": flags |= Flags.EulerY; break;
-                        case "m_LocalEulerAngles.z": flags |= Flags.EulerZ; break;
-                        case "localEulerAnglesRaw.x": flags |= Flags.EulerX; break;
-                        case "localEulerAnglesRaw.y": flags |= Flags.EulerY; break;
-                        case "localEulerAnglesRaw.z": flags |= Flags.EulerZ; break;
-                        case "m_LocalScale.x": flags |= Flags.ScaleX; break;
-                        case "m_LocalScale.y": flags |= Flags.ScaleY; break;
-                        case "m_LocalScale.z": flags |= Flags.ScaleZ; break;
-                        default: otherBindings.Add(binding); goto SkipFlagExistence;
-                    }
-
-                    if (bindings != null &&
-                        bindings.TryGetValue(binding, out var exists))
-                    {
-                        bindings = null;
-                        anyExists = exists;
-                    }
-                    SkipFlagExistence:
-
-                    if (index + 1 < sortedBindings.Count)
-                    {
-                        var nextBinding = sortedBindings[index + 1];
-                        if (nextBinding.type == typeof(Transform) &&
-                            nextBinding.path == binding.path)
-                        {
-                            index++;
-                            binding = nextBinding;
-                            goto CheckFlags;
-                        }
-                    }
-
-                    return flags;
-                }
-
-                /************************************************************************************************************************/
-
-                private static void AppendProperty(StringBuilder message, ref bool first, Flags flags,
-                    Flags[] propertyFlags, string propertyName, string flagNames)
-                {
-                    var all = Flags.None;
-                    for (int i = 0; i < propertyFlags.Length; i++)
-                        all |= propertyFlags[i];
-
-                    if (!HasAny(flags, all))
-                        return;
-
-                    AppendSeparator(message, ref first, " ", ", ").Append(propertyName);
-
-                    if (!HasAll(flags, all))
-                    {
-                        var firstSub = true;
-
-                        for (int i = 0; i < propertyFlags.Length; i++)
-                        {
-                            if (HasAll(flags, propertyFlags[i]))
-                            {
-                                AppendSeparator(message, ref firstSub, "(", ", ").Append(flagNames[i]);
-                            }
-                        }
-
-                        message.Append(')');
-                    }
-                }
-
-                /************************************************************************************************************************/
-
-                private static StringBuilder AppendSeparator(StringBuilder message, ref bool first, string prefix, string separator)
-                {
-                    if (first)
-                    {
-                        first = false;
-                        return message.Append(prefix);
-                    }
-                    else return message.Append(separator);
-                }
-
-                /************************************************************************************************************************/
-            }
-
-            /************************************************************************************************************************/
-
             /// <summary>
-            /// Logs a description of the issues found when comparing the properties animated by the `state` to the
-            /// properties that actually exist on the target <see cref="GameObject"/> and its children.
+            ///     Logs a description of the issues found when comparing the properties animated by the `state` to the
+            ///     properties that actually exist on the target <see cref="GameObject" /> and its children.
             /// </summary>
             public void LogIssues(AnimancerState state, MatchType match)
             {
@@ -843,7 +559,7 @@ namespace Animancer.Editor
 
                 if (newMatch != match)
                     Debug.LogWarning($"{nameof(MatchType)} changed from {match} to {newMatch}" +
-                        " between the initial check and the button press.");
+                                     " between the initial check and the button press.");
 
                 if (animator != null)
                     _ObjectToBindings.Remove(animator.gameObject);
@@ -859,15 +575,305 @@ namespace Animancer.Editor
             }
 
             /************************************************************************************************************************/
+
+            private static class TransformBindings
+            {
+                /************************************************************************************************************************/
+
+                private static readonly Flags[]
+                    PositionFlags = { Flags.PositionX, Flags.PositionY, Flags.PositionZ },
+                    RotationFlags = { Flags.RotationX, Flags.RotationY, Flags.RotationZ, Flags.RotationW },
+                    EulerFlags = { Flags.EulerX, Flags.EulerY, Flags.EulerZ },
+                    ScaleFlags = { Flags.ScaleX, Flags.ScaleY, Flags.ScaleZ };
+
+                private static bool HasAll(Flags flag, Flags has)
+                {
+                    return (flag & has) == has;
+                }
+
+                private static bool HasAny(Flags flag, Flags has)
+                {
+                    return (flag & has) != Flags.None;
+                }
+
+                /************************************************************************************************************************/
+
+                public static bool Append(Dictionary<EditorCurveBinding, bool> bindings,
+                    List<EditorCurveBinding> sortedBindings, ref int index, StringBuilder message)
+                {
+                    var binding = sortedBindings[index];
+                    if (binding.type != typeof(Transform))
+                        return false;
+
+                    if (string.IsNullOrEmpty(binding.path))
+                        message.AppendLine().Append('>');
+                    else
+                        message.Append(':');
+
+                    using (ObjectPool.Disposable.AcquireList<EditorCurveBinding>(out var otherBindings))
+                    {
+                        var flags = GetFlags(bindings, sortedBindings, ref index, otherBindings, out var anyExists);
+
+                        message.Append(anyExists ? " [o]" : " [x]");
+
+                        var first = true;
+
+                        AppendProperty(message, ref first, flags, PositionFlags, "position", "xyz");
+                        AppendProperty(message, ref first, flags, RotationFlags, "rotation", "wxyz");
+                        AppendProperty(message, ref first, flags, EulerFlags, "euler", "xyz");
+                        AppendProperty(message, ref first, flags, ScaleFlags, "scale", "xyz");
+
+                        for (var i = 0; i < otherBindings.Count; i++)
+                        {
+                            if (anyExists)
+                                message.Append(',');
+
+                            binding = otherBindings[i];
+                            message
+                                .Append(" [")
+                                .Append(bindings[binding] ? 'o' : 'x')
+                                .Append("] ")
+                                .Append(binding.propertyName);
+                        }
+                    }
+
+                    return true;
+                }
+
+                /************************************************************************************************************************/
+
+                private static Flags GetFlags(Dictionary<EditorCurveBinding, bool> bindings,
+                    List<EditorCurveBinding> sortedBindings, ref int index, List<EditorCurveBinding> otherBindings,
+                    out bool anyExists)
+                {
+                    var flags = Flags.None;
+                    anyExists = false;
+
+                    var binding = sortedBindings[index];
+
+                    CheckFlags:
+
+                    switch (binding.propertyName)
+                    {
+                        case "m_LocalPosition.x": flags |= Flags.PositionX; break;
+                        case "m_LocalPosition.y": flags |= Flags.PositionY; break;
+                        case "m_LocalPosition.z": flags |= Flags.PositionZ; break;
+                        case "m_LocalRotation.x": flags |= Flags.RotationX; break;
+                        case "m_LocalRotation.y": flags |= Flags.RotationY; break;
+                        case "m_LocalRotation.z": flags |= Flags.RotationZ; break;
+                        case "m_LocalRotation.w": flags |= Flags.RotationW; break;
+                        case "m_LocalEulerAngles.x": flags |= Flags.EulerX; break;
+                        case "m_LocalEulerAngles.y": flags |= Flags.EulerY; break;
+                        case "m_LocalEulerAngles.z": flags |= Flags.EulerZ; break;
+                        case "localEulerAnglesRaw.x": flags |= Flags.EulerX; break;
+                        case "localEulerAnglesRaw.y": flags |= Flags.EulerY; break;
+                        case "localEulerAnglesRaw.z": flags |= Flags.EulerZ; break;
+                        case "m_LocalScale.x": flags |= Flags.ScaleX; break;
+                        case "m_LocalScale.y": flags |= Flags.ScaleY; break;
+                        case "m_LocalScale.z": flags |= Flags.ScaleZ; break;
+                        default:
+                            otherBindings.Add(binding);
+                            goto SkipFlagExistence;
+                    }
+
+                    if (bindings != null &&
+                        bindings.TryGetValue(binding, out var exists))
+                    {
+                        bindings = null;
+                        anyExists = exists;
+                    }
+
+                    SkipFlagExistence:
+
+                    if (index + 1 < sortedBindings.Count)
+                    {
+                        var nextBinding = sortedBindings[index + 1];
+                        if (nextBinding.type == typeof(Transform) &&
+                            nextBinding.path == binding.path)
+                        {
+                            index++;
+                            binding = nextBinding;
+                            goto CheckFlags;
+                        }
+                    }
+
+                    return flags;
+                }
+
+                /************************************************************************************************************************/
+
+                private static void AppendProperty(StringBuilder message, ref bool first, Flags flags,
+                    Flags[] propertyFlags, string propertyName, string flagNames)
+                {
+                    var all = Flags.None;
+                    for (var i = 0; i < propertyFlags.Length; i++)
+                        all |= propertyFlags[i];
+
+                    if (!HasAny(flags, all))
+                        return;
+
+                    AppendSeparator(message, ref first, " ", ", ").Append(propertyName);
+
+                    if (!HasAll(flags, all))
+                    {
+                        var firstSub = true;
+
+                        for (var i = 0; i < propertyFlags.Length; i++)
+                            if (HasAll(flags, propertyFlags[i]))
+                                AppendSeparator(message, ref firstSub, "(", ", ").Append(flagNames[i]);
+
+                        message.Append(')');
+                    }
+                }
+
+                /************************************************************************************************************************/
+
+                private static StringBuilder AppendSeparator(StringBuilder message, ref bool first, string prefix,
+                    string separator)
+                {
+                    if (first)
+                    {
+                        first = false;
+                        return message.Append(prefix);
+                    }
+
+                    return message.Append(separator);
+                }
+
+                [Flags]
+                private enum Flags
+                {
+                    None = 0,
+
+                    PositionX = 1 << 0,
+                    PositionY = 1 << 1,
+                    PositionZ = 1 << 2,
+
+                    RotationX = 1 << 3,
+                    RotationY = 1 << 4,
+                    RotationZ = 1 << 5,
+                    RotationW = 1 << 6,
+
+                    EulerX = 1 << 7,
+                    EulerY = 1 << 8,
+                    EulerZ = 1 << 9,
+
+                    ScaleX = 1 << 10,
+                    ScaleY = 1 << 11,
+                    ScaleZ = 1 << 12
+                }
+
+                /************************************************************************************************************************/
+            }
+
+            /************************************************************************************************************************/
         }
 
         /************************************************************************************************************************/
+
+        #region Animation Types
+
+        /************************************************************************************************************************/
+
+        private static Dictionary<AnimationClip, bool> _ClipToIsSprite;
+
+        /// <summary>Determines the <see cref="AnimationType" /> of the specified `clip`.</summary>
+        public static AnimationType GetAnimationType(AnimationClip clip)
+        {
+            if (clip == null)
+                return AnimationType.None;
+
+            if (clip.isHumanMotion)
+                return AnimationType.Humanoid;
+
+            AnimancerEditorUtilities.InitializeCleanDictionary(ref _ClipToIsSprite);
+
+            if (!_ClipToIsSprite.TryGetValue(clip, out var isSprite))
+            {
+                var bindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
+                for (var i = 0; i < bindings.Length; i++)
+                {
+                    var binding = bindings[i];
+                    if (binding.type == typeof(SpriteRenderer) &&
+                        binding.propertyName == "m_Sprite")
+                    {
+                        isSprite = true;
+                        break;
+                    }
+                }
+
+                _ClipToIsSprite.Add(clip, isSprite);
+            }
+
+            return isSprite ? AnimationType.Sprite : AnimationType.Generic;
+        }
+
+        /************************************************************************************************************************/
+
+        /// <summary>Determines the <see cref="AnimationType" /> of the specified `animator`.</summary>
+        public static AnimationType GetAnimationType(Animator animator)
+        {
+            if (animator == null)
+                return AnimationType.None;
+
+            if (animator.isHuman)
+                return AnimationType.Humanoid;
+
+            // If all renderers are SpriteRenderers, it's a Sprite animation.
+            // Otherwise it's Generic.
+            var renderers = animator.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0)
+                return AnimationType.Generic;
+
+            for (var i = 0; i < renderers.Length; i++)
+                if (!(renderers[i] is SpriteRenderer))
+                    return AnimationType.Generic;
+
+            return AnimationType.Sprite;
+        }
+
+        /************************************************************************************************************************/
+
+        /// <summary>Determines the <see cref="AnimationType" /> of the specified `gameObject`.</summary>
+        public static AnimationType GetAnimationType(GameObject gameObject)
+        {
+            var type = AnimationType.None;
+            var animators = gameObject.GetComponentsInChildren<Animator>();
+            for (var i = 0; i < animators.Length; i++)
+            {
+                var animatorType = GetAnimationType(animators[i]);
+                switch (animatorType)
+                {
+                    case AnimationType.Humanoid: return AnimationType.Humanoid;
+                    case AnimationType.Generic: return AnimationType.Generic;
+
+                    case AnimationType.Sprite:
+                        if (type == AnimationType.None)
+                            type = AnimationType.Sprite;
+                        break;
+
+                    case AnimationType.None:
+                    default:
+                        break;
+                }
+            }
+
+            return type;
+        }
+
+        /************************************************************************************************************************/
+
+        #endregion
+
+        /************************************************************************************************************************/
+
         #region GUI
+
         /************************************************************************************************************************/
 
         /// <summary>
-        /// A summary of the compatability between the properties animated by an <see cref="AnimationClip"/> and the
-        /// properties that actually exist on a particular <see cref="GameObject"/> (and its children).
+        ///     A summary of the compatability between the properties animated by an <see cref="AnimationClip" /> and the
+        ///     properties that actually exist on a particular <see cref="GameObject" /> (and its children).
         /// </summary>
         public enum MatchType
         {
@@ -877,29 +883,29 @@ namespace Animancer.Editor
             /// <summary>Not yet checked.</summary>
             Unknown,
 
-            /// <summary>The <see cref="AnimationClip"/> does not animate anything.</summary>
+            /// <summary>The <see cref="AnimationClip" /> does not animate anything.</summary>
             Empty,
 
             /// <summary>Some of the animated properties do not exist on the object.</summary>
             Warning,
 
             /// <summary>None of the animated properties exist on the object.</summary>
-            Error,
+            Error
         }
 
         /************************************************************************************************************************/
 
-        private static readonly GUIStyle ButtonStyle = new GUIStyle();// No margins or anything.
+        private static readonly GUIStyle ButtonStyle = new(); // No margins or anything.
 
         /************************************************************************************************************************/
 
         private static readonly int ButtonHash = "Button".GetHashCode();
 
         /// <summary>
-        /// Draws a <see cref="GUI.Button(Rect, GUIContent, GUIStyle)"/> indicating the <see cref="MatchType"/> of the
-        /// `state` compared to the object it is being played on.
-        /// <para></para>
-        /// Clicking the button calls <see cref="BindingData.LogIssues"/>.
+        ///     Draws a <see cref="GUI.Button(Rect, GUIContent, GUIStyle)" /> indicating the <see cref="MatchType" /> of the
+        ///     `state` compared to the object it is being played on.
+        ///     <para></para>
+        ///     Clicking the button calls <see cref="BindingData.LogIssues" />.
         /// </summary>
         public static void DoBindingMatchGUI(ref Rect area, AnimancerState state)
         {
@@ -931,12 +937,16 @@ namespace Animancer.Editor
         }
 
         /************************************************************************************************************************/
+
         #endregion
-        /************************************************************************************************************************/
-        #region Icons
+
         /************************************************************************************************************************/
 
-        /// <summary>Get an icon = corresponding to the specified <see cref="MatchType"/>.</summary>
+        #region Icons
+
+        /************************************************************************************************************************/
+
+        /// <summary>Get an icon = corresponding to the specified <see cref="MatchType" />.</summary>
         public static Texture GetIcon(MatchType match)
         {
             switch (match)
@@ -957,7 +967,7 @@ namespace Animancer.Editor
         {
             var matchTypes = (MatchType[])Enum.GetValues(typeof(MatchType));
 
-            for (int i = 0; i < matchTypes.Length; i++)
+            for (var i = 0; i < matchTypes.Length; i++)
             {
                 var match = matchTypes[i];
                 var icon = GetIcon(match);
@@ -968,7 +978,7 @@ namespace Animancer.Editor
                         break;
 
                     case MatchType.Unknown:
-                        for (int iIcon = 0; iIcon < Icons.Unknown.Length; iIcon++)
+                        for (var iIcon = 0; iIcon < Icons.Unknown.Length; iIcon++)
                             Debug.Assert(Icons.Unknown[iIcon] != null,
                                 $"The icon for {nameof(MatchType)}.{nameof(MatchType.Unknown)}[{iIcon}] was not loaded.");
                         break;
@@ -1008,7 +1018,7 @@ namespace Animancer.Editor
                 AnimancerGUI.LoadIcon("WaitSpin08"),
                 AnimancerGUI.LoadIcon("WaitSpin09"),
                 AnimancerGUI.LoadIcon("WaitSpin10"),
-                AnimancerGUI.LoadIcon("WaitSpin11"),
+                AnimancerGUI.LoadIcon("WaitSpin11")
             };
 
             public static Texture GetUnknown()
@@ -1021,10 +1031,11 @@ namespace Animancer.Editor
         }
 
         /************************************************************************************************************************/
+
         #endregion
+
         /************************************************************************************************************************/
     }
 }
 
 #endif
-

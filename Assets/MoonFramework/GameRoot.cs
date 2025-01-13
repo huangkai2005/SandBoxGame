@@ -4,22 +4,23 @@ using LoggerManager = MoonFramework.Tool.LoggerManager;
 
 namespace MoonFramework.Template
 {
-    public class GameRoot : BaseGameMono<GameRoot> 
+    public class GameRoot : BaseGameMono<GameRoot>
     {
         /// <summary>
-        /// 框架设置
+        ///     框架设置
         /// </summary>
-        [SerializeField]
-        private GameConfigSetting gameSetting;
-        public GameConfigSetting GameSetting { get { return gameSetting; } }
+        [SerializeField] private GameConfigSetting gameSetting;
+
+        public GameConfigSetting GameSetting => gameSetting;
 
         protected override void Awake()
         {
-            if(Instance != null)
+            if (Instance != null)
             {
-                Destroy(gameObject); 
+                Destroy(gameObject);
                 return;
             }
+
             LoggerManager.RegisterLog("Map");
             base.Awake();
             DontDestroyOnLoad(gameObject);
@@ -28,11 +29,8 @@ namespace MoonFramework.Template
 
         private void InitManager()
         {
-            BaseMonoManager[] managers = GetComponents<BaseMonoManager>();
-            for (int i = 0; i < managers.Length; i++)
-            {
-                managers[i].Init();
-            }
+            var managers = GetComponents<BaseMonoManager>();
+            for (var i = 0; i < managers.Length; i++) managers[i].Init();
         }
 
 #if UNITY_EDITOR

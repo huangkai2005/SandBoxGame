@@ -1,16 +1,17 @@
 // Animancer // https://kybernetik.com.au/animancer // Copyright 2018-2023 Kybernetik //
 
 using System;
+using System.Diagnostics;
 
 namespace Animancer
 {
-    /// <summary>[Editor-Conditional]
-    /// Specifies a custom display label for the <c>Thresholds</c> column of a mixer transition.
+    /// <summary>
+    ///     [Editor-Conditional]
+    ///     Specifies a custom display label for the <c>Thresholds</c> column of a mixer transition.
     /// </summary>
     /// https://kybernetik.com.au/animancer/api/Animancer/ThresholdLabelAttribute
-    /// 
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Class | AttributeTargets.Struct, Inherited = true)]
-    [System.Diagnostics.Conditional(Strings.UnityEditor)]
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Class | AttributeTargets.Struct)]
+    [Conditional(Strings.UnityEditor)]
     public sealed class ThresholdLabelAttribute : Attribute
     {
         /************************************************************************************************************************/
@@ -22,7 +23,7 @@ namespace Animancer
 
         /************************************************************************************************************************/
 
-        /// <summary>Creates a new <see cref="ThresholdLabelAttribute"/>.</summary>
+        /// <summary>Creates a new <see cref="ThresholdLabelAttribute" />.</summary>
         public ThresholdLabelAttribute(string label)
         {
 #if UNITY_EDITOR
@@ -33,4 +34,3 @@ namespace Animancer
         /************************************************************************************************************************/
     }
 }
-

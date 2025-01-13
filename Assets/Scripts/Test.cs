@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Cysharp.Threading.Tasks;
 using MoonFramework.Tool;
 using Serilog;
 using UnityEditor;
@@ -14,10 +15,22 @@ namespace MoonFramework.Test
         public Texture2D[] marshTextures; // 沼泽纹理数组
         public string savePath = "Assets/Resources/Map"; // 保存路径
 
-        public void Start()
-        { 
+        public async void Start()
+        {
             LoggerManager.RegisterLog("TestLog");
-            Log.Verbose("你好");
+            Log.Debug("Start");
+            UniTaskCompletionSource token = new();
+            test(token).Forget();
+            await token.Task;
+            Log.Debug("over");
+        }
+
+        public async UniTaskVoid test(UniTaskCompletionSource token)
+        {
+            await UniTask.Delay(TimeSpan.FromSeconds(5f));
+            token.TrySetResult();
+            await UniTask.Delay(TimeSpan.FromSeconds(5f));
+            Log.Debug("你好");
         }
 
         [ContextMenu("Generate Cell Textures")]

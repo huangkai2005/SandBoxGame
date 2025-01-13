@@ -6,9 +6,21 @@ using UnityEditor;
 
 namespace Animancer.Editor
 {
-    /// <summary>[Editor-Only] A wrapper around a <see cref="SerializedProperty"/> representing an array field.</summary>
+    /// <summary>[Editor-Only] A wrapper around a <see cref="SerializedProperty" /> representing an array field.</summary>
     public class SerializedArrayProperty
     {
+        /************************************************************************************************************************/
+
+        private int _Count;
+        private bool _GotHasMultipleDifferentValues;
+
+        /************************************************************************************************************************/
+
+        private bool _HasMultipleDifferentValues;
+
+        /************************************************************************************************************************/
+
+        private string _Path;
         /************************************************************************************************************************/
 
         private SerializedProperty _Property;
@@ -24,30 +36,17 @@ namespace Animancer.Editor
             }
         }
 
-        /************************************************************************************************************************/
-
-        private string _Path;
-
-        /// <summary>The cached <see cref="SerializedProperty.propertyPath"/> of the <see cref="Property"/>.</summary>
+        /// <summary>The cached <see cref="SerializedProperty.propertyPath" /> of the <see cref="Property" />.</summary>
         public string Path => _Path ?? (_Path = Property.propertyPath);
 
-        /************************************************************************************************************************/
-
-        private int _Count;
-
-        /// <summary>The cached <see cref="SerializedProperty.arraySize"/> of the <see cref="Property"/>.</summary>
+        /// <summary>The cached <see cref="SerializedProperty.arraySize" /> of the <see cref="Property" />.</summary>
         public int Count
         {
             get => _Count;
             set => Property.arraySize = _Count = value;
         }
 
-        /************************************************************************************************************************/
-
-        private bool _HasMultipleDifferentValues;
-        private bool _GotHasMultipleDifferentValues;
-
-        /// <summary>The cached <see cref="SerializedProperty.hasMultipleDifferentValues"/> of the <see cref="Property"/>.</summary>
+        /// <summary>The cached <see cref="SerializedProperty.hasMultipleDifferentValues" /> of the <see cref="Property" />.</summary>
         public bool HasMultipleDifferentValues
         {
             get
@@ -64,7 +63,7 @@ namespace Animancer.Editor
 
         /************************************************************************************************************************/
 
-        /// <summary>Updates the cached <see cref="Count"/> and <see cref="HasMultipleDifferentValues"/>.</summary>
+        /// <summary>Updates the cached <see cref="Count" /> and <see cref="HasMultipleDifferentValues" />.</summary>
         public void Refresh()
         {
             _Path = null;
@@ -74,18 +73,17 @@ namespace Animancer.Editor
 
         /************************************************************************************************************************/
 
-        /// <summary>Calls <see cref="SerializedProperty.GetArrayElementAtIndex"/> on the <see cref="Property"/>.</summary>
+        /// <summary>Calls <see cref="SerializedProperty.GetArrayElementAtIndex" /> on the <see cref="Property" />.</summary>
         /// <remarks>
-        /// Returns <c>null</c> if the element is not actually a child of the <see cref="Property"/>, which can happen
-        /// if multiple objects are selected with different array sizes.
+        ///     Returns <c>null</c> if the element is not actually a child of the <see cref="Property" />, which can happen
+        ///     if multiple objects are selected with different array sizes.
         /// </remarks>
         public SerializedProperty GetElement(int index)
         {
             var element = Property.GetArrayElementAtIndex(index);
             if (!HasMultipleDifferentValues || element.propertyPath.StartsWith(Path))
                 return element;
-            else
-                return null;
+            return null;
         }
 
         /************************************************************************************************************************/
@@ -93,4 +91,3 @@ namespace Animancer.Editor
 }
 
 #endif
-

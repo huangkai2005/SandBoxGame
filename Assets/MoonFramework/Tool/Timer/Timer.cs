@@ -5,8 +5,8 @@ using UnityEngine;
 namespace MoonFramework.Tool
 {
     /// <summary>
-    /// 启动前需要重置Reset() Timer
-    /// 定时器
+    ///     启动前需要重置Reset() Timer
+    ///     定时器
     /// </summary>
     public class Timer
     {
@@ -42,7 +42,7 @@ namespace MoonFramework.Tool
         }
 
         /// <summary>
-        /// 重置Timer
+        ///     重置Timer
         /// </summary>
         public void Reset()
         {
@@ -52,28 +52,24 @@ namespace MoonFramework.Tool
         }
 
         public void Change(float timeLimit)
-            => TimeLimit = timeLimit;
-
-        /// <summary>
-        /// 暂时停止Timer运行
-        /// </summary>
-        public void Pause()
         {
-            if (_isRunning)
-            {
-                _isPaused = true;
-            }
+            TimeLimit = timeLimit;
         }
 
         /// <summary>
-        /// 恢复Timer运行
+        ///     暂时停止Timer运行
+        /// </summary>
+        public void Pause()
+        {
+            if (_isRunning) _isPaused = true;
+        }
+
+        /// <summary>
+        ///     恢复Timer运行
         /// </summary>
         public void Resume()
         {
-            if (_isRunning && _isPaused)
-            {
-                _isPaused = false;
-            }
+            if (_isRunning && _isPaused) _isPaused = false;
         }
     }
 }

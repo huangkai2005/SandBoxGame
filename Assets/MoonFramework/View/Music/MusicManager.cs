@@ -4,10 +4,10 @@ namespace MoonFramework.Template
 {
     public class MusicManager : BaseManager<MusicManager>
     {
+        private readonly float musicVolum = 1;
 
         //背景音乐
-        private AudioSource backgroundMusic = null;
-        private readonly float musicVolum = 1;
+        private AudioSource backgroundMusic;
 
         //音效
         //private 
@@ -19,12 +19,10 @@ namespace MoonFramework.Template
 
         private void Update()
         {
-
         }
 
         public async void PlayBackgroundMusic(string name)
         {
-
             if (backgroundMusic == null)
             {
                 GameObject obj = new()
@@ -35,7 +33,7 @@ namespace MoonFramework.Template
             }
 
             //异步加载背景音乐
-            await ResourceManager.Instance.LoadAsync<AudioClip>($"Music/Background{name}", (clip) =>
+            await ResourceManager.Instance.LoadAsync<AudioClip>($"Music/Background{name}", clip =>
             {
                 backgroundMusic.clip = clip;
                 backgroundMusic.volume = musicVolum;
@@ -44,7 +42,7 @@ namespace MoonFramework.Template
         }
 
         /// <summary>
-        /// 改变音量大小
+        ///     改变音量大小
         /// </summary>
         /// <param name="v"></param>
         public void ChangeBackgroundMusic(float v)
@@ -55,7 +53,7 @@ namespace MoonFramework.Template
         }
 
         /// <summary>
-        /// 暂停播放音乐
+        ///     暂停播放音乐
         /// </summary>
         public void PauseBackgroundMusic()
         {
@@ -65,7 +63,7 @@ namespace MoonFramework.Template
         }
 
         /// <summary>
-        /// 停止播放音乐
+        ///     停止播放音乐
         /// </summary>
         public void StopBackgroudMusic()
         {
@@ -73,8 +71,5 @@ namespace MoonFramework.Template
                 return;
             backgroundMusic.Stop();
         }
-
-
     }
-
 }

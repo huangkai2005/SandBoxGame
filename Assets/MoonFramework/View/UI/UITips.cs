@@ -1,50 +1,49 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace MoonFramework
 {
-	public class UITips : MonoBehaviour
-	{
-		[SerializeField]
-		private Text infoText;
-		[SerializeField]
-		private Animator animator;
-		private readonly Queue<string> tipsQue = new();
-		private bool isShow = false;
+    public class UITips : MonoBehaviour
+    {
+        [SerializeField] private Text infoText;
 
-		/// <summary>
-		/// Ìí¼ÓÌáÊ¾
-		/// </summary>
-		public void AddTips(string info)
-		{
-			tipsQue.Enqueue(info);
-			ShowTips();
-		}
+        [SerializeField] private Animator animator;
 
-		private void ShowTips()
-		{
-			if (tipsQue.Count > 0 && !isShow)
-			{
-				infoText.text = tipsQue.Dequeue();
-				animator.Play("Show", 0, 0);
-			}
-		}
+        private readonly Queue<string> tipsQue = new();
+        private bool isShow;
 
-		#region ¶¯»­ÊÂ¼þ
+        /// <summary>
+        ///     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
+        /// </summary>
+        public void AddTips(string info)
+        {
+            tipsQue.Enqueue(info);
+            ShowTips();
+        }
 
-		private void StartTips()
-		{
-			isShow = true;
-		}
+        private void ShowTips()
+        {
+            if (tipsQue.Count > 0 && !isShow)
+            {
+                infoText.text = tipsQue.Dequeue();
+                animator.Play("Show", 0, 0);
+            }
+        }
 
-		private void EndTips()
-		{
-			isShow = false;
-			ShowTips();
-		}
+        #region ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½
 
-		#endregion ¶¯»­ÊÂ¼þ
-	}
+        private void StartTips()
+        {
+            isShow = true;
+        }
+
+        private void EndTips()
+        {
+            isShow = false;
+            ShowTips();
+        }
+
+        #endregion ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½
+    }
 }

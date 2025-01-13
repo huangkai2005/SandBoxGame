@@ -12,9 +12,12 @@ using Object = UnityEngine.Object;
 
 namespace Animancer.Editor
 {
-    /// <summary>[Editor-Only]
-    /// A button that allows the user to select an object type for a [<see cref="SerializeReference"/>] field.</summary>
-    /// <example><code>
+    /// <summary>
+    ///     [Editor-Only]
+    ///     A button that allows the user to select an object type for a [<see cref="SerializeReference" />] field.
+    /// </summary>
+    /// <example>
+    ///     <code>
     /// public override void OnGUI(Rect area, SerializedProperty property, GUIContent label)
     /// {
     ///     using (new TypeSelectionButton(area, property, label, true))
@@ -22,7 +25,8 @@ namespace Animancer.Editor
     ///         EditorGUI.PropertyField(area, property, label, true);
     ///     }
     /// }
-    /// </code></example>
+    /// </code>
+    /// </example>
     public readonly struct TypeSelectionButton : IDisposable
     {
         /************************************************************************************************************************/
@@ -30,15 +34,15 @@ namespace Animancer.Editor
         /// <summary>The pixel area occupied by the button.</summary>
         public readonly Rect Area;
 
-        /// <summary>The <see cref="SerializedProperty"/> representing the attributed field.</summary>
+        /// <summary>The <see cref="SerializedProperty" /> representing the attributed field.</summary>
         public readonly SerializedProperty Property;
 
-        /// <summary>The original <see cref="Event.type"/> from when this button was initialized.</summary>
+        /// <summary>The original <see cref="Event.type" /> from when this button was initialized.</summary>
         public readonly EventType EventType;
 
         /************************************************************************************************************************/
 
-        /// <summary>Creates a new <see cref="TypeSelectionButton"/>.</summary>
+        /// <summary>Creates a new <see cref="TypeSelectionButton" />.</summary>
         public TypeSelectionButton(Rect area, SerializedProperty property, bool hasLabel)
         {
             area.height = AnimancerGUI.LineHeight;
@@ -67,7 +71,10 @@ namespace Animancer.Editor
 
         /************************************************************************************************************************/
 
-        void IDisposable.Dispose() => DoGUI();
+        void IDisposable.Dispose()
+        {
+            DoGUI();
+        }
 
         /// <summary>Draws this button's GUI.</summary>
         /// <remarks>Run this method after drawing the target property so the button draws on top of its label.</remarks>
@@ -103,8 +110,9 @@ namespace Animancer.Editor
                         else
                         {
                             label.text = valueType.GetNameCS(false);
-                            label.tooltip = valueType.GetNameCS(true);
+                            label.tooltip = valueType.GetNameCS();
                         }
+
                         break;
 
                     default:
@@ -136,7 +144,7 @@ namespace Animancer.Editor
             AddTypeSelector(menu, property, fieldType, selectedType, null);
 
             var inheritors = GetDerivedTypes(fieldType);
-            for (int i = 0; i < inheritors.Count; i++)
+            for (var i = 0; i < inheritors.Count; i++)
                 AddTypeSelector(menu, property, fieldType, selectedType, inheritors[i]);
 
             menu.ShowAsContext();
@@ -150,7 +158,7 @@ namespace Animancer.Editor
         {
             var label = GetSelectorLabel(fieldType, newType);
             var state = selectedType == newType ? MenuFunctionState.Selected : MenuFunctionState.Normal;
-            menu.AddPropertyModifierFunction(property, label, state, (targetProperty) =>
+            menu.AddPropertyModifierFunction(property, label, state, targetProperty =>
             {
                 var oldValue = property.GetValue();
                 var newValue = CreateDefaultInstance(newType);
@@ -171,8 +179,9 @@ namespace Animancer.Editor
             PrefMenuPrefix = "Display Options/";
 
         private static readonly BoolPref
-            UseFullNames = new BoolPref(PrefKeyPrefix + nameof(UseFullNames), PrefMenuPrefix + "Show Full Names", false),
-            UseTypeHierarchy = new BoolPref(PrefKeyPrefix + nameof(UseTypeHierarchy), PrefMenuPrefix + "Show Type Hierarchy", false);
+            UseFullNames = new(PrefKeyPrefix + nameof(UseFullNames), PrefMenuPrefix + "Show Full Names", false),
+            UseTypeHierarchy = new(PrefKeyPrefix + nameof(UseTypeHierarchy), PrefMenuPrefix + "Show Type Hierarchy",
+                false);
 
         private static string GetSelectorLabel(Type fieldType, Type newType)
         {
@@ -184,16 +193,13 @@ namespace Animancer.Editor
 
             var label = ObjectPool.AcquireStringBuilder();
 
-            if (fieldType.IsInterface)// Interface.
-            {
+            if (fieldType.IsInterface) // Interface.
                 while (true)
                 {
                     if (label.Length > 0)
                         label.Insert(0, '/');
 
-                    var displayType = newType.IsGenericType ?
-                        newType.GetGenericTypeDefinition() :
-                        newType;
+                    var displayType = newType.IsGenericType ? newType.GetGenericTypeDefinition() : newType;
                     label.Insert(0, displayType.GetNameCS(UseFullNames));
 
                     newType = newType.BaseType;
@@ -202,9 +208,7 @@ namespace Animancer.Editor
                         !fieldType.IsAssignableFrom(newType))
                         break;
                 }
-            }
-            else// Base Class.
-            {
+            else // Base Class.
                 while (true)
                 {
                     if (label.Length > 0)
@@ -228,7 +232,6 @@ namespace Animancer.Editor
                             break;
                     }
                 }
-            }
 
             return label.ReleaseToString();
         }
@@ -236,9 +239,10 @@ namespace Animancer.Editor
         /************************************************************************************************************************/
 
         private static readonly List<Type>
-            AllTypes = new List<Type>(1024);
+            AllTypes = new(1024);
+
         private static readonly Dictionary<Type, List<Type>>
-            TypeToDerived = new Dictionary<Type, List<Type>>();
+            TypeToDerived = new();
 
         /// <summary>Returns a list of all types that inherit from the `baseType`.</summary>
         public static List<Type> GetDerivedTypes(Type baseType)
@@ -248,10 +252,10 @@ namespace Animancer.Editor
                 if (AllTypes.Count == 0)
                 {
                     var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-                    for (int iAssembly = 0; iAssembly < assemblies.Length; iAssembly++)
+                    for (var iAssembly = 0; iAssembly < assemblies.Length; iAssembly++)
                     {
                         var types = assemblies[iAssembly].GetTypes();
-                        for (int iType = 0; iType < types.Length; iType++)
+                        for (var iType = 0; iType < types.Length; iType++)
                         {
                             var type = types[iType];
                             if (IsViableType(type))
@@ -263,12 +267,13 @@ namespace Animancer.Editor
                 }
 
                 derivedTypes = new List<Type>();
-                for (int i = 0; i < AllTypes.Count; i++)
+                for (var i = 0; i < AllTypes.Count; i++)
                 {
                     var type = AllTypes[i];
                     if (baseType.IsAssignableFrom(type))
                         derivedTypes.Add(type);
                 }
+
                 TypeToDerived.Add(baseType, derivedTypes);
             }
 
@@ -277,25 +282,27 @@ namespace Animancer.Editor
 
         /************************************************************************************************************************/
 
-        /// <summary>Is the `type` supported by <see cref="SerializeReference"/> fields?</summary>
-        public static bool IsViableType(Type type) =>
-            !type.IsAbstract &&
-            !type.IsEnum &&
-            !type.IsGenericTypeDefinition &&
-            !type.IsInterface &&
-            !type.IsPrimitive &&
-            !type.IsSpecialName &&
-            type.Name[0] != '<' &&
-            type.IsDefined(typeof(SerializableAttribute), false) &&
-            !type.IsDefined(typeof(ObsoleteAttribute), true) &&
-            !typeof(Object).IsAssignableFrom(type) &&
-            type.GetConstructor(AnimancerEditorUtilities.InstanceBindings, null, Type.EmptyTypes, null) != null;
+        /// <summary>Is the `type` supported by <see cref="SerializeReference" /> fields?</summary>
+        public static bool IsViableType(Type type)
+        {
+            return !type.IsAbstract &&
+                   !type.IsEnum &&
+                   !type.IsGenericTypeDefinition &&
+                   !type.IsInterface &&
+                   !type.IsPrimitive &&
+                   !type.IsSpecialName &&
+                   type.Name[0] != '<' &&
+                   type.IsDefined(typeof(SerializableAttribute), false) &&
+                   !type.IsDefined(typeof(ObsoleteAttribute), true) &&
+                   !typeof(Object).IsAssignableFrom(type) &&
+                   type.GetConstructor(AnimancerEditorUtilities.InstanceBindings, null, Type.EmptyTypes, null) != null;
+        }
 
         /************************************************************************************************************************/
 
         /// <summary>
-        /// Creates a new instance of the `type` using its parameterless constructor if it has one or a fully
-        /// uninitialized object if it doesn't. Or returns <c>null</c> if the <see cref="Type.IsAbstract"/>.
+        ///     Creates a new instance of the `type` using its parameterless constructor if it has one or a fully
+        ///     uninitialized object if it doesn't. Or returns <c>null</c> if the <see cref="Type.IsAbstract" />.
         /// </summary>
         public static object CreateDefaultInstance(Type type)
         {
@@ -303,7 +310,8 @@ namespace Animancer.Editor
                 type.IsAbstract)
                 return default;
 
-            var constructor = type.GetConstructor(AnimancerEditorUtilities.InstanceBindings, null, Type.EmptyTypes, null);
+            var constructor =
+                type.GetConstructor(AnimancerEditorUtilities.InstanceBindings, null, Type.EmptyTypes, null);
             if (constructor != null)
                 return constructor.Invoke(null);
 
@@ -311,16 +319,19 @@ namespace Animancer.Editor
         }
 
         /// <summary>
-        /// Creates a <typeparamref name="T"/> using its parameterless constructor if it has one or a fully
-        /// uninitialized object if it doesn't. Or returns <c>null</c> if the <see cref="Type.IsAbstract"/>.
+        ///     Creates a <typeparamref name="T" /> using its parameterless constructor if it has one or a fully
+        ///     uninitialized object if it doesn't. Or returns <c>null</c> if the <see cref="Type.IsAbstract" />.
         /// </summary>
-        public static T CreateDefaultInstance<T>() => (T)CreateDefaultInstance(typeof(T));
+        public static T CreateDefaultInstance<T>()
+        {
+            return (T)CreateDefaultInstance(typeof(T));
+        }
 
         /************************************************************************************************************************/
 
         /// <summary>
-        /// Copies the values of all fields in `from` into corresponding fields in `to` as long as they have the same
-        /// name and compatible types.
+        ///     Copies the values of all fields in `from` into corresponding fields in `to` as long as they have the same
+        ///     name and compatible types.
         /// </summary>
         public static void CopyCommonFields(object from, object to)
         {
@@ -334,22 +345,21 @@ namespace Animancer.Editor
             {
                 var fromFields = fromType.GetFields(AnimancerEditorUtilities.InstanceBindings);
 
-                for (int i = 0; i < fromFields.Length; i++)
+                for (var i = 0; i < fromFields.Length; i++)
                 {
                     var field = fromFields[i];
                     nameToFromField[field.Name] = field;
                 }
 
                 fromType = fromType.BaseType;
-            }
-            while (fromType != null);
+            } while (fromType != null);
 
             var toType = to.GetType();
             do
             {
                 var toFields = toType.GetFields(AnimancerEditorUtilities.InstanceBindings);
 
-                for (int i = 0; i < toFields.Length; i++)
+                for (var i = 0; i < toFields.Length; i++)
                 {
                     var toField = toFields[i];
                     if (nameToFromField.TryGetValue(toField.Name, out var fromField))
@@ -361,8 +371,7 @@ namespace Animancer.Editor
                 }
 
                 toType = toType.BaseType;
-            }
-            while (toType != null);
+            } while (toType != null);
         }
 
         /************************************************************************************************************************/

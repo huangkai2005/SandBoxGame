@@ -2,23 +2,24 @@
 
 #if UNITY_EDITOR
 
-using Animancer.Editor.Tools;
-using Animancer.Units;
 using System;
 using System.Collections.Generic;
+using Animancer.Editor.Tools;
+using Animancer.Units;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace Animancer.Editor
 {
-    /// <summary>[Editor-Only]
-    /// A custom Inspector for <see cref="Sprite"/>s which allows you to directly edit them instead of just showing
-    /// their details like the default one does.
+    /// <summary>
+    ///     [Editor-Only]
+    ///     A custom Inspector for <see cref="Sprite" />s which allows you to directly edit them instead of just showing
+    ///     their details like the default one does.
     /// </summary>
     /// https://kybernetik.com.au/animancer/api/Animancer.Editor/SpriteEditor
-    /// 
-    [CustomEditor(typeof(Sprite), true), CanEditMultipleObjects]
+    [CustomEditor(typeof(Sprite), true)]
+    [CanEditMultipleObjects]
     public class SpriteEditor : UnityEditor.Editor
     {
         /************************************************************************************************************************/
@@ -27,26 +28,96 @@ namespace Animancer.Editor
             NameTooltip = "The asset name of the sprite",
             RectTooltip = "The texture area occupied by the sprite",
             PivotTooltip = "The origin point of the sprite relative to its Rect",
-            BorderTooltip = "The edge sizes used when 9-Slicing the sprite for the UI system (ignored by SpriteRenderers)";
+            BorderTooltip =
+                "The edge sizes used when 9-Slicing the sprite for the UI system (ignored by SpriteRenderers)";
 
-        [NonSerialized]
-        private SerializedProperty
+        [NonSerialized] private bool _HasBeenModified;
+
+        [NonSerialized] private SerializedProperty
             _Name,
             _Rect,
             _Pivot,
             _Border;
 
-        [NonSerialized]
-        private NormalizedPixelField[]
+        [NonSerialized] private NormalizedPixelField[]
             _RectFields,
             _PivotFields,
             _BorderFields;
 
-        [NonSerialized]
-        private bool _HasBeenModified;
+        [NonSerialized] private Target[] _Targets;
 
-        [NonSerialized]
-        private Target[] _Targets;
+        /************************************************************************************************************************/
+
+        /// <summary>Initializes this editor.</summary>
+        protected virtual void OnEnable()
+        {
+            var targets = this.targets;
+            _Targets = new Target[targets.Length];
+            for (var i = 0; i < targets.Length; i++)
+                _Targets[i] = new Target(targets[i]);
+
+            InitializePreview();
+
+            _Name = serializedObject.FindProperty($"m{nameof(_Name)}");
+
+            _Rect = serializedObject.FindProperty($"m{nameof(_Rect)}");
+            if (_Rect != null)
+                _RectFields = new[]
+                {
+                    new NormalizedPixelField(_Rect.FindPropertyRelative(nameof(Rect.x)), new GUIContent("X (Left)",
+                        "The distance from the left edge of the texture to the left edge of the sprite"), false),
+                    new NormalizedPixelField(_Rect.FindPropertyRelative(nameof(Rect.y)), new GUIContent("Y (Bottom)",
+                        "The distance from the bottom edge of the texture to the bottom edge of the sprite"), false),
+                    new NormalizedPixelField(_Rect.FindPropertyRelative(nameof(Rect.width)), new GUIContent("Width",
+                        "The horizontal size of the sprite"), false),
+                    new NormalizedPixelField(_Rect.FindPropertyRelative(nameof(Rect.height)), new GUIContent("Height",
+                        "The vertical size of the sprite"), false)
+                };
+
+            _Pivot = serializedObject.FindProperty($"m{nameof(_Pivot)}");
+            if (_Pivot != null)
+                _PivotFields = new[]
+                {
+                    new NormalizedPixelField(_Pivot.FindPropertyRelative(nameof(Vector2.x)), new GUIContent("X",
+                        "The horizontal distance from the left edge of the sprite to the pivot point"), true),
+                    new NormalizedPixelField(_Pivot.FindPropertyRelative(nameof(Vector2.y)), new GUIContent("Y",
+                        "The vertical distance from the bottom edge of the sprite to the pivot point"), true)
+                };
+
+            _Border = serializedObject.FindProperty($"m{nameof(_Border)}");
+            if (_Border != null)
+                _BorderFields = new[]
+                {
+                    new NormalizedPixelField(_Border.FindPropertyRelative(nameof(Vector4.x)), new GUIContent("Left",
+                        BorderTooltip), false),
+                    new NormalizedPixelField(_Border.FindPropertyRelative(nameof(Vector4.y)), new GUIContent("Bottom",
+                        BorderTooltip), false),
+                    new NormalizedPixelField(_Border.FindPropertyRelative(nameof(Vector4.z)), new GUIContent("Right",
+                        BorderTooltip), false),
+                    new NormalizedPixelField(_Border.FindPropertyRelative(nameof(Vector4.w)), new GUIContent("Top",
+                        BorderTooltip), false)
+                };
+        }
+
+        /************************************************************************************************************************/
+
+        /// <summary>Cleans up this editor.</summary>
+        protected virtual void OnDisable()
+        {
+            CleanUpPreview();
+
+            if (_HasBeenModified)
+            {
+                var sprite = target as Sprite;
+                if (sprite == null)
+                    return;
+
+                if (EditorUtility.DisplayDialog("Unapplied Import Settings",
+                        $"Unapplied import settings for '{sprite.name}' in '{AssetDatabase.GetAssetPath(sprite)}'",
+                        nameof(Apply), nameof(Revert)))
+                    Apply();
+            }
+        }
 
         private readonly struct Target
         {
@@ -64,93 +135,16 @@ namespace Animancer.Editor
 
         /************************************************************************************************************************/
 
-        /// <summary>Initializes this editor.</summary>
-        protected virtual void OnEnable()
-        {
-            var targets = this.targets;
-            _Targets = new Target[targets.Length];
-            for (int i = 0; i < targets.Length; i++)
-                _Targets[i] = new Target(targets[i]);
-
-            InitializePreview();
-
-            _Name = serializedObject.FindProperty($"m{nameof(_Name)}");
-
-            _Rect = serializedObject.FindProperty($"m{nameof(_Rect)}");
-            if (_Rect != null)
-            {
-                _RectFields = new NormalizedPixelField[]
-                {
-                    new NormalizedPixelField(_Rect.FindPropertyRelative(nameof(Rect.x)), new GUIContent("X (Left)",
-                        "The distance from the left edge of the texture to the left edge of the sprite"), false),
-                    new NormalizedPixelField(_Rect.FindPropertyRelative(nameof(Rect.y)), new GUIContent("Y (Bottom)",
-                        "The distance from the bottom edge of the texture to the bottom edge of the sprite"), false),
-                    new NormalizedPixelField(_Rect.FindPropertyRelative(nameof(Rect.width)), new GUIContent("Width",
-                        "The horizontal size of the sprite"), false),
-                    new NormalizedPixelField(_Rect.FindPropertyRelative(nameof(Rect.height)), new GUIContent("Height",
-                        "The vertical size of the sprite"), false),
-                };
-            }
-
-            _Pivot = serializedObject.FindProperty($"m{nameof(_Pivot)}");
-            if (_Pivot != null)
-            {
-                _PivotFields = new NormalizedPixelField[]
-                {
-                    new NormalizedPixelField(_Pivot.FindPropertyRelative(nameof(Vector2.x)), new GUIContent("X",
-                        "The horizontal distance from the left edge of the sprite to the pivot point"), true),
-                    new NormalizedPixelField(_Pivot.FindPropertyRelative(nameof(Vector2.y)), new GUIContent("Y",
-                        "The vertical distance from the bottom edge of the sprite to the pivot point"), true),
-                };
-            }
-
-            _Border = serializedObject.FindProperty($"m{nameof(_Border)}");
-            if (_Border != null)
-            {
-                _BorderFields = new NormalizedPixelField[]
-                {
-                    new NormalizedPixelField(_Border.FindPropertyRelative(nameof(Vector4.x)), new GUIContent("Left",
-                        BorderTooltip), false),
-                    new NormalizedPixelField(_Border.FindPropertyRelative(nameof(Vector4.y)), new GUIContent("Bottom",
-                        BorderTooltip), false),
-                    new NormalizedPixelField(_Border.FindPropertyRelative(nameof(Vector4.z)), new GUIContent("Right",
-                        BorderTooltip), false),
-                    new NormalizedPixelField(_Border.FindPropertyRelative(nameof(Vector4.w)), new GUIContent("Top",
-                        BorderTooltip), false),
-                };
-            }
-        }
-
-        /************************************************************************************************************************/
-
-        /// <summary>Cleans up this editor.</summary>
-        protected virtual void OnDisable()
-        {
-            CleanUpPreview();
-
-            if (_HasBeenModified)
-            {
-                var sprite = target as Sprite;
-                if (sprite == null)
-                    return;
-
-                if (EditorUtility.DisplayDialog("Unapplied Import Settings",
-                    $"Unapplied import settings for '{sprite.name}' in '{AssetDatabase.GetAssetPath(sprite)}'",
-                    nameof(Apply), nameof(Revert)))
-                    Apply();
-            }
-        }
-
-        /************************************************************************************************************************/
         #region Inspector
+
         /************************************************************************************************************************/
 
-        /// <summary>Are all targets set to <see cref="SpriteImportMode.Multiple"/>?</summary>
+        /// <summary>Are all targets set to <see cref="SpriteImportMode.Multiple" />?</summary>
         private bool AllSpriteModeMultiple
         {
             get
             {
-                for (int i = 0; i < _Targets.Length; i++)
+                for (var i = 0; i < _Targets.Length; i++)
                 {
                     var importer = _Targets[i].Importer;
                     if (importer == null ||
@@ -209,11 +203,13 @@ namespace Animancer.Editor
                 GUI.enabled = false;
 
             using (ObjectPool.Disposable.AcquireContent(out var label, "Name", NameTooltip))
+            {
                 EditorGUILayout.PropertyField(_Name, label, true);
+            }
 
             GUI.enabled = true;
 
-            var changed = EditorGUI.EndChangeCheck();// Exclude the Rename button from the main change check.
+            var changed = EditorGUI.EndChangeCheck(); // Exclude the Rename button from the main change check.
 
             if (GUILayout.Button("Rename Tool", EditorStyles.miniButton, AnimancerGUI.DontExpandWidth))
                 AnimancerToolsWindow.Open(typeof(RenameSpritesTool));
@@ -235,7 +231,9 @@ namespace Animancer.Editor
             _RectFields[1].normalizeMultiplier = _RectFields[3].normalizeMultiplier = 1f / texture.height;
 
             using (ObjectPool.Disposable.AcquireContent(out var label, "Rect", RectTooltip))
+            {
                 NormalizedPixelField.DoGroupGUI(_Rect, label, _RectFields);
+            }
         }
 
         /************************************************************************************************************************/
@@ -246,7 +244,7 @@ namespace Animancer.Editor
 
             var targets = this.targets;
             var size = targets[0] is Sprite sprite ? sprite.rect.size : Vector2.one;
-            for (int i = 1; i < targets.Length; i++)
+            for (var i = 1; i < targets.Length; i++)
             {
                 sprite = targets[i] as Sprite;
                 if (sprite == null || !sprite.rect.size.Equals(size))
@@ -257,7 +255,9 @@ namespace Animancer.Editor
             _PivotFields[1].normalizeMultiplier = 1f / size.y;
 
             using (ObjectPool.Disposable.AcquireContent(out var label, "Pivot", PivotTooltip))
+            {
                 NormalizedPixelField.DoGroupGUI(_Pivot, label, _PivotFields);
+            }
 
             EditorGUI.showMixedValue = showMixedValue;
         }
@@ -271,7 +271,9 @@ namespace Animancer.Editor
             _BorderFields[1].normalizeMultiplier = _BorderFields[3].normalizeMultiplier = 1f / size.y;
 
             using (ObjectPool.Disposable.AcquireContent(out var label, "Border", BorderTooltip))
+            {
                 NormalizedPixelField.DoGroupGUI(_Border, label, _BorderFields);
+            }
         }
 
         /************************************************************************************************************************/
@@ -293,7 +295,7 @@ namespace Animancer.Editor
 
             var hasError = false;
 
-            for (int i = 0; i < _Targets.Length; i++)
+            for (var i = 0; i < _Targets.Length; i++)
             {
                 var target = _Targets[i];
                 if (target.Sprite == null ||
@@ -307,7 +309,7 @@ namespace Animancer.Editor
                     data.Apply();
             }
 
-            for (int i = 0; i < targets.Length; i++)
+            for (var i = 0; i < targets.Length; i++)
                 if (targets[i] == null)
                     return;
 
@@ -326,7 +328,7 @@ namespace Animancer.Editor
                     if (path != null)
                     {
                         AssetDatabase.RenameAsset(path, _Name.stringValue);
-                        hasError = true;// Don't apply the importer.
+                        hasError = true; // Don't apply the importer.
                     }
                 }
 
@@ -357,32 +359,33 @@ namespace Animancer.Editor
         }
 
         /************************************************************************************************************************/
+
         #region Normalized Pixel Field
+
         /************************************************************************************************************************/
 
         /// <summary>
-        /// A wrapper around a <see cref="SerializedProperty"/> to display it using two float fields where one is
-        /// normalized and the other is not.
+        ///     A wrapper around a <see cref="SerializedProperty" /> to display it using two float fields where one is
+        ///     normalized and the other is not.
         /// </summary>
         private class NormalizedPixelField
         {
+            /// <summary>Is the serialized property value normalized?</summary>
+            public readonly bool IsNormalized;
+
+            /// <summary>The label to display next to the property.</summary>
+            public readonly GUIContent Label;
             /************************************************************************************************************************/
 
             /// <summary>The target property.</summary>
             public readonly SerializedProperty Property;
-
-            /// <summary>The label to display next to the property.</summary>
-            public readonly GUIContent Label;
-
-            /// <summary>Is the serialized property value normalized?</summary>
-            public readonly bool IsNormalized;
 
             /// <summary>The multiplier to turn a non-normalized value into a normalized one.</summary>
             public float normalizeMultiplier;
 
             /************************************************************************************************************************/
 
-            /// <summary>Creates a new <see cref="NormalizedPixelField"/>.</summary>
+            /// <summary>Creates a new <see cref="NormalizedPixelField" />.</summary>
             public NormalizedPixelField(SerializedProperty property, GUIContent label, bool isNormalized)
             {
                 Property = property;
@@ -392,8 +395,9 @@ namespace Animancer.Editor
 
             /************************************************************************************************************************/
 
-            /// <summary>Draws a group of <see cref="NormalizedPixelField"/>s.</summary>
-            public static void DoGroupGUI(SerializedProperty baseProperty, GUIContent label, NormalizedPixelField[] fields)
+            /// <summary>Draws a group of <see cref="NormalizedPixelField" />s.</summary>
+            public static void DoGroupGUI(SerializedProperty baseProperty, GUIContent label,
+                NormalizedPixelField[] fields)
             {
                 var height = (AnimancerGUI.LineHeight + AnimancerGUI.StandardSpacing) * (fields.Length + 1);
                 var area = GUILayoutUtility.GetRect(0, height);
@@ -405,7 +409,7 @@ namespace Animancer.Editor
 
                 EditorGUI.indentLevel++;
 
-                for (int i = 0; i < fields.Length; i++)
+                for (var i = 0; i < fields.Length; i++)
                 {
                     AnimancerGUI.NextVerticalArea(ref area);
                     fields[i].DoTwinFloatFieldGUI(area);
@@ -416,12 +420,12 @@ namespace Animancer.Editor
 
             /************************************************************************************************************************/
 
-            /// <summary>Draws this <see cref="NormalizedPixelField"/>.</summary>
+            /// <summary>Draws this <see cref="NormalizedPixelField" />.</summary>
             public void DoTwinFloatFieldGUI(Rect area)
             {
-                var drawer = IsNormalized ?
-                    NormalizedPixelFieldAttribute.Normalized :
-                    NormalizedPixelFieldAttribute.Pixel;
+                var drawer = IsNormalized
+                    ? NormalizedPixelFieldAttribute.Normalized
+                    : NormalizedPixelFieldAttribute.Pixel;
 
                 drawer.CalculateMultipliers(normalizeMultiplier);
                 drawer.OnGUI(area, Property, Label);
@@ -431,43 +435,33 @@ namespace Animancer.Editor
         }
 
         /************************************************************************************************************************/
+
         #endregion
+
         /************************************************************************************************************************/
+
         #region Normalized Pixel Field Attribute
+
         /************************************************************************************************************************/
 
         private class NormalizedPixelFieldAttribute : UnitsAttribute
         {
             /************************************************************************************************************************/
 
-            private static new readonly float[] Multipliers = new float[2];
-
-            public void CalculateMultipliers(float normalizeMultiplier)
-            {
-                if (UnitIndex == 0)// Pixels.
-                {
-                    Multipliers[0] = 1;
-                    Multipliers[1] = normalizeMultiplier;
-                }
-                else// Normalized.
-                {
-                    Multipliers[0] = 1f / normalizeMultiplier;
-                    Multipliers[1] = 1;
-                }
-            }
+            private new static readonly float[] Multipliers = new float[2];
 
             /************************************************************************************************************************/
 
-            private static new readonly CompactUnitConversionCache[] DisplayConverters =
+            private new static readonly CompactUnitConversionCache[] DisplayConverters =
             {
-                new CompactUnitConversionCache("px"),
-                AnimationTimeAttribute.XSuffix,
+                new("px"),
+                AnimationTimeAttribute.XSuffix
             };
 
             /************************************************************************************************************************/
 
-            public static readonly NormalizedPixelFieldAttribute Pixel = new NormalizedPixelFieldAttribute(false);
-            public static readonly NormalizedPixelFieldAttribute Normalized = new NormalizedPixelFieldAttribute(true);
+            public static readonly NormalizedPixelFieldAttribute Pixel = new(false);
+            public static readonly NormalizedPixelFieldAttribute Normalized = new(true);
 
             /************************************************************************************************************************/
 
@@ -479,40 +473,61 @@ namespace Animancer.Editor
 #endif
             }
 
+            public void CalculateMultipliers(float normalizeMultiplier)
+            {
+                if (UnitIndex == 0) // Pixels.
+                {
+                    Multipliers[0] = 1;
+                    Multipliers[1] = normalizeMultiplier;
+                }
+                else // Normalized.
+                {
+                    Multipliers[0] = 1f / normalizeMultiplier;
+                    Multipliers[1] = 1;
+                }
+            }
+
             /************************************************************************************************************************/
 
-            /// <inheritdoc/>
-            protected override int GetLineCount(SerializedProperty property, GUIContent label) => 1;
+            /// <inheritdoc />
+            protected override int GetLineCount(SerializedProperty property, GUIContent label)
+            {
+                return 1;
+            }
 
             /************************************************************************************************************************/
         }
 
         /************************************************************************************************************************/
+
         #endregion
+
         /************************************************************************************************************************/
+
         #endregion
+
         /************************************************************************************************************************/
+
         #region Preview
+
         /************************************************************************************************************************/
 
         private static readonly Type
             DefaultEditorType = typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.SpriteInspector");
 
         private readonly Dictionary<Object, UnityEditor.Editor>
-            TargetToDefaultEditor = new Dictionary<Object, UnityEditor.Editor>();
+            TargetToDefaultEditor = new();
 
         /************************************************************************************************************************/
 
         private void InitializePreview()
         {
             foreach (var target in targets)
-            {
                 if (!TargetToDefaultEditor.ContainsKey(target))
                 {
                     var editor = CreateEditor(target, DefaultEditorType);
                     TargetToDefaultEditor.Add(target, editor);
                 }
-            }
         }
 
         /************************************************************************************************************************/
@@ -528,11 +543,13 @@ namespace Animancer.Editor
         /************************************************************************************************************************/
 
         private bool TryGetDefaultEditor(out UnityEditor.Editor editor)
-            => TargetToDefaultEditor.TryGetValue(target, out editor);
+        {
+            return TargetToDefaultEditor.TryGetValue(target, out editor);
+        }
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override string GetInfoString()
         {
             if (!TryGetDefaultEditor(out var editor))
@@ -543,7 +560,7 @@ namespace Animancer.Editor
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override Texture2D RenderStaticPreview(string assetPath, Object[] subAssets, int width, int height)
         {
             if (!TryGetDefaultEditor(out var editor))
@@ -554,7 +571,7 @@ namespace Animancer.Editor
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override bool HasPreviewGUI()
         {
             return TryGetDefaultEditor(out var editor) && editor.HasPreviewGUI();
@@ -562,7 +579,7 @@ namespace Animancer.Editor
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override void OnPreviewGUI(Rect area, GUIStyle background)
         {
             if (TryGetDefaultEditor(out var editor))
@@ -629,6 +646,7 @@ namespace Animancer.Editor
             {
                 pivot = _Pivot.vector2Value;
             }
+
             pivot.x *= area.width;
             pivot.y *= area.height;
 
@@ -644,12 +662,14 @@ namespace Animancer.Editor
             switch (currentEvent.GetTypeForControl(controlID))
             {
                 case EventType.MouseDown:
-                    if (currentEvent.button == 0 && pivotArea.Contains(Event.current.mousePosition) && !currentEvent.alt)
+                    if (currentEvent.button == 0 && pivotArea.Contains(Event.current.mousePosition) &&
+                        !currentEvent.alt)
                     {
                         GUIUtility.hotControl = GUIUtility.keyboardControl = controlID;
                         _MouseDownPivot = pivot;
                         currentEvent.Use();
                     }
+
                     break;
 
                 case EventType.MouseDrag:
@@ -670,6 +690,7 @@ namespace Animancer.Editor
                         GUI.changed = true;
                         currentEvent.Use();
                     }
+
                     break;
 
                 case EventType.MouseUp:
@@ -678,6 +699,7 @@ namespace Animancer.Editor
                         GUIUtility.hotControl = 0;
                         currentEvent.Use();
                     }
+
                     break;
 
                 case EventType.KeyDown:
@@ -688,6 +710,7 @@ namespace Animancer.Editor
                         GUI.changed = true;
                         currentEvent.Use();
                     }
+
                     break;
 
                 case EventType.Repaint:
@@ -700,20 +723,20 @@ namespace Animancer.Editor
 
         /************************************************************************************************************************/
 
-        /// <summary>The opposite of <see cref="Mathf.LerpUnclamped(float, float, float)"/>.</summary>
+        /// <summary>The opposite of <see cref="Mathf.LerpUnclamped(float, float, float)" />.</summary>
         public static float InverseLerpUnclamped(float a, float b, float value)
         {
             if (a == b)
                 return 0;
-            else
-                return (value - a) / (b - a);
+            return (value - a) / (b - a);
         }
 
         /************************************************************************************************************************/
+
         #endregion
+
         /************************************************************************************************************************/
     }
 }
 
 #endif
-

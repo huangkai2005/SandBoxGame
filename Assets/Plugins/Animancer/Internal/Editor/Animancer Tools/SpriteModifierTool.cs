@@ -10,23 +10,23 @@ using Object = UnityEngine.Object;
 
 namespace Animancer.Editor.Tools
 {
-    /// <summary>[Editor-Only] [Pro-Only]
-    /// A base <see cref="AnimancerToolsWindow.Tool"/> for modifying <see cref="Sprite"/>s.
+    /// <summary>
+    ///     [Editor-Only] [Pro-Only]
+    ///     A base <see cref="AnimancerToolsWindow.Tool" /> for modifying <see cref="Sprite" />s.
     /// </summary>
     /// <remarks>
-    /// Documentation: <see href="https://kybernetik.com.au/animancer/docs/manual/tools">Animancer Tools</see>
+    ///     Documentation: <see href="https://kybernetik.com.au/animancer/docs/manual/tools">Animancer Tools</see>
     /// </remarks>
     /// https://kybernetik.com.au/animancer/api/Animancer.Editor.Tools/SpriteModifierTool
-    /// 
     [Serializable]
     public abstract class SpriteModifierTool : AnimancerToolsWindow.Tool
     {
         /************************************************************************************************************************/
 
-        private static readonly List<Sprite> SelectedSprites = new List<Sprite>();
+        private static readonly List<Sprite> SelectedSprites = new();
         private static bool _HasGatheredSprites;
 
-        /// <summary>The currently selected <see cref="Sprite"/>s.</summary>
+        /// <summary>The currently selected <see cref="Sprite" />s.</summary>
         public static List<Sprite> Sprites
         {
             get
@@ -41,7 +41,12 @@ namespace Animancer.Editor.Tools
             }
         }
 
-        /// <inheritdoc/>
+        /************************************************************************************************************************/
+
+        /// <summary>The message to confirm that the user is certain they want to apply the changes.</summary>
+        protected virtual string AreYouSure => "Are you sure you want to modify these Sprites?";
+
+        /// <inheritdoc />
         public override void OnSelectionChanged()
         {
             _HasGatheredSprites = false;
@@ -49,7 +54,7 @@ namespace Animancer.Editor.Tools
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override void DoBodyGUI()
         {
 #if !UNITY_2D_SPRITE
@@ -66,25 +71,20 @@ namespace Animancer.Editor.Tools
         /************************************************************************************************************************/
 
         /// <summary>
-        /// Adds all <see cref="Sprite"/>s in the <see cref="Selection.objects"/> or their sub-assets to the
-        /// list of `sprites`.
+        ///     Adds all <see cref="Sprite" />s in the <see cref="Selection.objects" /> or their sub-assets to the
+        ///     list of `sprites`.
         /// </summary>
         public static void GatherSelectedSprites(List<Sprite> sprites)
         {
             sprites.Clear();
 
             var selection = Selection.objects;
-            for (int i = 0; i < selection.Length; i++)
+            for (var i = 0; i < selection.Length; i++)
             {
                 var selected = selection[i];
                 if (selected is Sprite sprite)
-                {
                     sprites.Add(sprite);
-                }
-                else if (selected is Texture2D texture)
-                {
-                    sprites.AddRange(LoadAllSpritesInTexture(texture));
-                }
+                else if (selected is Texture2D texture) sprites.AddRange(LoadAllSpritesInTexture(texture));
             }
 
             sprites.Sort(NaturalCompare);
@@ -92,38 +92,40 @@ namespace Animancer.Editor.Tools
 
         /************************************************************************************************************************/
 
-        /// <summary>Returns all the <see cref="Sprite"/> sub-assets of the `texture`.</summary>
+        /// <summary>Returns all the <see cref="Sprite" /> sub-assets of the `texture`.</summary>
         public static Sprite[] LoadAllSpritesInTexture(Texture2D texture)
-            => LoadAllSpritesAtPath(AssetDatabase.GetAssetPath(texture));
+        {
+            return LoadAllSpritesAtPath(AssetDatabase.GetAssetPath(texture));
+        }
 
-        /// <summary>Returns all the <see cref="Sprite"/> assets at the `path`.</summary>
+        /// <summary>Returns all the <see cref="Sprite" /> assets at the `path`.</summary>
         public static Sprite[] LoadAllSpritesAtPath(string path)
         {
             var assets = AssetDatabase.LoadAllAssetsAtPath(path);
             var sprites = new List<Sprite>();
-            for (int j = 0; j < assets.Length; j++)
-            {
+            for (var j = 0; j < assets.Length; j++)
                 if (assets[j] is Sprite sprite)
                     sprites.Add(sprite);
-            }
             return sprites.ToArray();
         }
 
         /************************************************************************************************************************/
 
-        /// <summary>Calls <see cref="EditorUtility.NaturalCompare"/> on the <see cref="Object.name"/>s.</summary>
-        public static int NaturalCompare(Object a, Object b) => EditorUtility.NaturalCompare(a.name, b.name);
-
-        /************************************************************************************************************************/
-
-        /// <summary>The message to confirm that the user is certain they want to apply the changes.</summary>
-        protected virtual string AreYouSure => "Are you sure you want to modify these Sprites?";
+        /// <summary>Calls <see cref="EditorUtility.NaturalCompare" /> on the <see cref="Object.name" />s.</summary>
+        public static int NaturalCompare(Object a, Object b)
+        {
+            return EditorUtility.NaturalCompare(a.name, b.name);
+        }
 
         /// <summary>Called immediately after the user confirms they want to apply changes.</summary>
-        protected virtual void PrepareToApply() { }
+        protected virtual void PrepareToApply()
+        {
+        }
 
         /// <summary>Applies the desired modifications to the `data` before it is saved.</summary>
-        protected virtual void Modify(SpriteDataEditor data, int index, Sprite sprite) { }
+        protected virtual void Modify(SpriteDataEditor data, int index, Sprite sprite)
+        {
+        }
 
         /// <summary>Applies the desired modifications to the `data` before it is saved.</summary>
         protected virtual void Modify(TextureImporter importer, List<Sprite> sprites)
@@ -132,7 +134,7 @@ namespace Animancer.Editor.Tools
 
             var hasError = false;
 
-            for (int i = 0; i < sprites.Count; i++)
+            for (var i = 0; i < sprites.Count; i++)
             {
                 var sprite = sprites[i];
                 var index = dataEditor.IndexOf(sprite);
@@ -153,21 +155,21 @@ namespace Animancer.Editor.Tools
         /************************************************************************************************************************/
 
         /// <summary>
-        /// Asks the user if they want to modify the target <see cref="Sprite"/>s and calls <see cref="Modify"/>
-        /// on each of them before saving any changes.
+        ///     Asks the user if they want to modify the target <see cref="Sprite" />s and calls <see cref="Modify" />
+        ///     on each of them before saving any changes.
         /// </summary>
         protected void AskAndApply()
         {
             if (!EditorUtility.DisplayDialog("Are You Sure?",
-                AreYouSure + "\n\nThis operation cannot be undone.",
-                "Modify", "Cancel"))
+                    AreYouSure + "\n\nThis operation cannot be undone.",
+                    "Modify", "Cancel"))
                 return;
 
             PrepareToApply();
 
             var pathToSprites = new Dictionary<string, List<Sprite>>();
             var sprites = Sprites;
-            for (int i = 0; i < sprites.Count; i++)
+            for (var i = 0; i < sprites.Count; i++)
             {
                 var sprite = sprites[i];
 
@@ -194,12 +196,10 @@ namespace Animancer.Editor.Tools
                         .Append(asset.Value.Count)
                         .Append(" Sprites:");
 
-                    for (int i = 0; i < sprites.Count; i++)
-                    {
+                    for (var i = 0; i < sprites.Count; i++)
                         message.AppendLine()
                             .Append(" - ")
                             .Append(sprites[i].name);
-                    }
 
                     Debug.LogError(message.ReleaseToString(), AssetDatabase.LoadAssetAtPath<Object>(asset.Key));
                 }
@@ -211,4 +211,3 @@ namespace Animancer.Editor.Tools
 }
 
 #endif
-

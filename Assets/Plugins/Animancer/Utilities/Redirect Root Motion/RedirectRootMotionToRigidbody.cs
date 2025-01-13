@@ -5,18 +5,17 @@ using UnityEngine;
 namespace Animancer
 {
     /// <summary>
-    /// A component which takes the root motion from an <see cref="Animator"/> and applies it to a
-    /// <see cref="Rigidbody"/>.
+    ///     A component which takes the root motion from an <see cref="Animator" /> and applies it to a
+    ///     <see cref="Rigidbody" />.
     /// </summary>
     /// https://kybernetik.com.au/animancer/api/Animancer/RedirectRootMotionToRigidbody
-    /// 
     [AddComponentMenu("Animancer/Redirect Root Motion To Rigidbody")]
     [HelpURL("https://kybernetik.com.au/animancer/api/Animancer/" + nameof(RedirectRootMotionToRigidbody))]
     public class RedirectRootMotionToRigidbody : RedirectRootMotion<Rigidbody>
     {
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override void OnAnimatorMove()
         {
             if (!ApplyRootMotion)

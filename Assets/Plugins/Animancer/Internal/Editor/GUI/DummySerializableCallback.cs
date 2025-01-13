@@ -11,18 +11,13 @@ using UnityEngine.Events;
 namespace Animancer.Editor
 {
     /// <summary>
-    /// An object that holds a serialized callback (a <see cref="UnityEvent"/> by default) so that empty ones can be
-    /// drawn in the GUI without allocating array space for them until they actually contain something.
+    ///     An object that holds a serialized callback (a <see cref="UnityEvent" /> by default) so that empty ones can be
+    ///     drawn in the GUI without allocating array space for them until they actually contain something.
     /// </summary>
     internal class DummySerializableCallback : ScriptableObject
     {
-        /************************************************************************************************************************/
-
-        [SerializeField] private SerializableCallbackHolder _Holder;
-
-        /************************************************************************************************************************/
-
         private static SerializedProperty _CallbackProperty;
+        [SerializeField] private SerializableCallbackHolder _Holder;
 
         private static SerializedProperty CallbackProperty
         {
@@ -48,11 +43,7 @@ namespace Animancer.Editor
             }
         }
 
-        /************************************************************************************************************************/
-
         public static float Height => EditorGUI.GetPropertyHeight(CallbackProperty);
-
-        /************************************************************************************************************************/
 
         public static bool DoCallbackGUI(ref Rect area, GUIContent label, SerializedProperty property,
             out object callback)
@@ -92,6 +83,13 @@ namespace Animancer.Editor
             callback = null;
             return false;
         }
+        /************************************************************************************************************************/
+
+        /************************************************************************************************************************/
+
+        /************************************************************************************************************************/
+
+        /************************************************************************************************************************/
 
         /************************************************************************************************************************/
     }

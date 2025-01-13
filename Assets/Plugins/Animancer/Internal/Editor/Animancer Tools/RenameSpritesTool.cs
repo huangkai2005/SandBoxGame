@@ -11,37 +11,50 @@ using UnityEngine;
 
 namespace Animancer.Editor.Tools
 {
-    /// <summary>[Editor-Only] [Pro-Only] A <see cref="SpriteModifierTool"/> for bulk-renaming <see cref="Sprite"/>s.</summary>
+    /// <summary>[Editor-Only] [Pro-Only] A <see cref="SpriteModifierTool" /> for bulk-renaming <see cref="Sprite" />s.</summary>
     /// <remarks>
-    /// Documentation: <see href="https://kybernetik.com.au/animancer/docs/manual/tools/rename-sprites">Rename Sprites</see>
+    ///     Documentation:
+    ///     <see href="https://kybernetik.com.au/animancer/docs/manual/tools/rename-sprites">Rename Sprites</see>
     /// </remarks>
     /// https://kybernetik.com.au/animancer/api/Animancer.Editor.Tools/RenameSpritesTool
-    /// 
     [Serializable]
     public class RenameSpritesTool : SpriteModifierTool
     {
         /************************************************************************************************************************/
 
-        [NonSerialized] private List<string> _Names;
-        [NonSerialized] private bool _NamesAreDirty;
-        [NonSerialized] private ReorderableList _SpritesDisplay;
-        [NonSerialized] private ReorderableList _NamesDisplay;
+        // We could prevent it from causing animations to lose their data by using ISpriteEditorDataProvider
+        // instead of TextureImporter, but it's in the 2D Sprite package which Animancer does not otherwise require.
 
-        [SerializeField] private string _NewName = "";
-        [SerializeField] private int _MinimumDigits;
+        private const string ReferencesLostMessage =
+            "Any references to the renamed Sprites will be lost (including animations that use them)" +
+            " but you can use the 'Remap Sprite Animations' tool to reassign them afterwards.";
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        private static Dictionary<Sprite, string> _SpriteToName;
+
+        [SerializeField] private string _NewName = "";
+
+        [SerializeField] private int _MinimumDigits;
+        /************************************************************************************************************************/
+
+        [NonSerialized] private List<string> _Names;
+        [NonSerialized] private bool _NamesAreDirty;
+        [NonSerialized] private ReorderableList _NamesDisplay;
+        [NonSerialized] private ReorderableList _SpritesDisplay;
+
+        /************************************************************************************************************************/
+
+        /// <inheritdoc />
         public override int DisplayOrder => 2;
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override string Name => "Rename Sprites";
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override string HelpURL => Strings.DocsURLs.RenameSprites;
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override string Instructions
         {
             get
@@ -55,7 +68,14 @@ namespace Animancer.Editor.Tools
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
+        protected override string AreYouSure =>
+            "Are you sure you want to rename these Sprites?" +
+            "\n\n" + ReferencesLostMessage;
+
+        /************************************************************************************************************************/
+
+        /// <inheritdoc />
         public override void OnEnable(int index)
         {
             base.OnEnable(index);
@@ -66,7 +86,7 @@ namespace Animancer.Editor.Tools
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override void OnSelectionChanged()
         {
             base.OnSelectionChanged();
@@ -75,7 +95,7 @@ namespace Animancer.Editor.Tools
 
         /************************************************************************************************************************/
 
-        /// <summary>Refreshes the <see cref="_Names"/>.</summary>
+        /// <summary>Refreshes the <see cref="_Names" />.</summary>
         private void UpdateNames()
         {
             if (!_NamesAreDirty)
@@ -88,7 +108,7 @@ namespace Animancer.Editor.Tools
 
             if (string.IsNullOrEmpty(_NewName))
             {
-                for (int i = 0; i < sprites.Count; i++)
+                for (var i = 0; i < sprites.Count; i++)
                     _Names[i] = sprites[i].name;
             }
             else
@@ -98,18 +118,18 @@ namespace Animancer.Editor.Tools
                     digits = _MinimumDigits;
 
                 var formatCharacters = new char[digits];
-                for (int i = 0; i < digits; i++)
+                for (var i = 0; i < digits; i++)
                     formatCharacters[i] = '0';
                 var format = new string(formatCharacters);
 
-                for (int i = 0; i < _Names.Count; i++)
+                for (var i = 0; i < _Names.Count; i++)
                     _Names[i] = _NewName + (i + 1).ToString(format);
             }
         }
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public override void DoBodyGUI()
         {
             base.DoBodyGUI();
@@ -165,27 +185,7 @@ namespace Animancer.Editor.Tools
             GUILayout.EndHorizontal();
         }
 
-        /************************************************************************************************************************/
-
-        // We could prevent it from causing animations to lose their data by using ISpriteEditorDataProvider
-        // instead of TextureImporter, but it's in the 2D Sprite package which Animancer does not otherwise require.
-
-        private const string ReferencesLostMessage =
-            "Any references to the renamed Sprites will be lost (including animations that use them)" +
-            " but you can use the 'Remap Sprite Animations' tool to reassign them afterwards.";
-
-        /************************************************************************************************************************/
-
-        /// <inheritdoc/>
-        protected override string AreYouSure =>
-            "Are you sure you want to rename these Sprites?" +
-            "\n\n" + ReferencesLostMessage;
-
-        /************************************************************************************************************************/
-
-        private static Dictionary<Sprite, string> _SpriteToName;
-
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override void PrepareToApply()
         {
             if (_SpriteToName == null)
@@ -194,10 +194,7 @@ namespace Animancer.Editor.Tools
                 _SpriteToName.Clear();
 
             var sprites = Sprites;
-            for (int i = 0; i < sprites.Count; i++)
-            {
-                _SpriteToName.Add(sprites[i], _Names[i]);
-            }
+            for (var i = 0; i < sprites.Count; i++) _SpriteToName.Add(sprites[i], _Names[i]);
 
             // Renaming selected Sprites will lose the selection without triggering OnSelectionChanged.
             EditorApplication.delayCall += OnSelectionChanged;
@@ -205,7 +202,7 @@ namespace Animancer.Editor.Tools
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override void Modify(SpriteDataEditor data, int index, Sprite sprite)
         {
             data.SetName(index, _SpriteToName[sprite]);
@@ -213,7 +210,7 @@ namespace Animancer.Editor.Tools
 
         /************************************************************************************************************************/
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override void Modify(TextureImporter importer, List<Sprite> sprites)
         {
             if (sprites.Count == 1 && importer.spriteImportMode != SpriteImportMode.Multiple)
@@ -235,4 +232,3 @@ namespace Animancer.Editor.Tools
 }
 
 #endif
-
