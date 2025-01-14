@@ -8,7 +8,6 @@ namespace MoonFramework.Template
     public class UIManager : BaseMonoManager<UIManager>
     {
         [SerializeField] private UILayer[] uiLayers;
-
         // 提示窗
         [SerializeField] private UITips UITips;
 

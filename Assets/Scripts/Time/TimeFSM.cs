@@ -1,60 +1,109 @@
 using Sirenix.OdinInspector;
 using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using MoonFramework.FSM;
+using UnityEngine.Rendering.PostProcessing;
 
 namespace MoonFramework.GameTime
 {
     //早上
     public class MorningTime : BaseTimeState
-    {}
+    {
+        public override void Entry()
+        {
+            RenderSettings.fog = true;
+            Fog().Forget();
+        }
+
+        private async UniTaskVoid Fog()
+        {
+            while (RenderSettings.fog)
+            {
+                RenderSettings.fogDensity = 0.1f - (1 - ratio);
+                await UniTask.Yield();
+            }
+        }
+
+        public override void Exit()
+        {
+            RenderSettings.fog = false;
+        }
+    }
 
     //中午
     public class NoonTime : BaseTimeState
-    {}
+    {
+        public override void Entry()
+        {
+            
+        }   
+
+        public override void Exit()
+        {
+            
+        }
+    }
 
     //黄昏
     public class NightfallTime : BaseTimeState
     {
+        public override void Entry()
+        {
+            
+        }
+
+        public override void Exit()
+        {
+            
+        }
     }
 
     //晚上
     public class NightTime : BaseTimeState
-    {}
+    {
+        public override void Entry()
+        {
+            
+        }
+
+        public override void Exit()
+        {
+            
+        }
+    }
 
     public abstract class BaseTimeState : IState
     {
         public TimeData timeData;
+        protected float ratio;
+        public TimeFSM fsmMachine;
 
-        public void Init(TimeData timeData)
+        public void Init(TimeData timeData, TimeFSM timeFsm)
         {
             this.timeData = timeData;
+            fsmMachine = timeFsm;
         }
 
         /// <summary>
         /// 检查并且计算时间
         /// </summary>
         /// <returns>是否还在当前状态</returns>
-        public bool CheckAndCalTime(float curTime, BaseTimeState nextState, out Quaternion rotation, out Color color, out float sunIntensity)
+        public bool CheckAndCalTime(float curTime, String nextStateName, out Quaternion rotation, out Color color, out float sunIntensity)
         {
+            var nextState = fsmMachine.fsmStates[nextStateName] as BaseTimeState;
             // 0~1之间
-            float ratio = 1f - (curTime / timeData.durationTime);
-            rotation = Quaternion.Slerp(this.timeData.sunQuaternion, nextState.timeData.sunQuaternion, ratio);
-            color = Color.Lerp(this.timeData.sunColor, nextState.timeData.sunColor, ratio);
-            sunIntensity = Mathf.Lerp(this.timeData.sunIntensity, nextState.timeData.sunIntensity, ratio);
+            ratio = 1f - (curTime / timeData.durationTime);
+            rotation = Quaternion.Slerp(timeData.sunQuaternion, nextState.timeData.sunQuaternion, ratio);
+            color = Color.Lerp(timeData.sunColor, nextState.timeData.sunColor, ratio);
+            sunIntensity = Mathf.Lerp(timeData.sunIntensity, nextState.timeData.sunIntensity, ratio);
             // 如果时间大于0所以还在本状态
             return curTime > 0;
         }
 
-        public void Entry()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract void Entry();
 
-        public void Exit()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract void Exit();
     }
     [Serializable]
     public struct TimeData
@@ -67,6 +116,8 @@ namespace MoonFramework.GameTime
 
         //阳光颜色
         public Color sunColor;
+        
+        public AudioClip BgAudioClip; //背景音乐
 
         //太阳的角度
         [OnValueChanged(nameof(SetRotation))]
@@ -85,8 +136,6 @@ namespace MoonFramework.GameTime
     /// </summary>
     public class TimeFSM : BaseFSM
     {
-        public string curState = "MorningTime";
-
         public TimeFSM(string curState, TimeManager time) : base(curState, time)
         {
             BaseTimeState[] states = new BaseTimeState[]
@@ -98,12 +147,13 @@ namespace MoonFramework.GameTime
             };
             for (int i = 0; i < states.Length; i++)
             {
-                states[i].timeData = ((TimeManager)entity).timeDatas[i];
+                states[i].Init(((TimeManager)entity).timeDatas[i], this);
             }
             AddTransition(nameof(MorningTime), nameof(NoonTime));
             AddTransition(nameof(NoonTime), nameof(NightfallTime));
             AddTransition(nameof(NightfallTime), nameof(NightTime));
             AddTransition(nameof(NightTime), nameof(MorningTime));
+            fsmStates[curState].Entry();
         }
     }
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using MoonFramework;
 using MoonFramework.Template;
 using UnityEngine;
 using Sirenix.OdinInspector;
@@ -219,7 +218,7 @@ namespace MoonFramework.Audio
         private async UniTask<AudioSource> GetAudioPlay(bool is3D = true)
         {
             // 从对象池中获取播放器
-            AudioSource audioSource = await GameObjPoolManager.Instance.Pop("") as AudioSource;
+            AudioSource audioSource = await GameObjPoolManager.Instance.Pop("AudioPlayer") as AudioSource;
             SetEffectAudioPlay(audioSource, is3D ? 1f : 0f);
             audioPlayList.Add(audioSource);
             return audioSource;
@@ -240,8 +239,8 @@ namespace MoonFramework.Audio
             // 放回池子
             if (audioSource)
             {
-                //TODO:路径进行统一
-                this.MoonGameObjPushPool(audioSource, "");
+                //TODO:路径进行统一，后续可以扩展Root等设置
+                this.MoonGameObjPushPool(audioSource, "AudioPlayer");
                 // 回调 延迟 time（秒）时间
                 await UniTask.Delay(TimeSpan.FromSeconds(time));
                 callBak?.Invoke();
