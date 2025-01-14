@@ -30,7 +30,7 @@ namespace MoonFramework.Template
                 var layerNum = layer == -1 ? info.layerNum : layer;
 
                 // 实例化实例或者获取到实例，保证窗口实例存在
-                if (info.objInstance != null)
+                if (info.objInstance)
                 {
                     info.objInstance.gameObject.SetActive(true);
                     info.objInstance.transform.SetParent(uiLayers[layerNum].root);
@@ -70,7 +70,7 @@ namespace MoonFramework.Template
         {
             if (UIElements.TryGetValue(type, out var info))
             {
-                if (info.objInstance == null) return;
+                if (!info.objInstance) return;
 
                 // 缓存则隐藏
                 if (info.isCache)

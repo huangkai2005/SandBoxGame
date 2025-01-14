@@ -8,7 +8,6 @@ namespace MoonFramework.FSM
 {
     public class WalkState : BaseState
     {
-        private UniTaskCompletionSource<int> _completion;
         private bool _isRun;
 
         public WalkState(BaseFSM fsmMachine)
@@ -19,7 +18,6 @@ namespace MoonFramework.FSM
         public override void Entry()
         {
             _isRun = true;
-            _completion = new UniTaskCompletionSource<int>();
             AnimancerManager.Instance.Play((fsmMachine.entity as Actor)?.GetType().Name, "Walk");
             Walk().Forget();
         }
@@ -28,7 +26,7 @@ namespace MoonFramework.FSM
         {
             while (_isRun)
             {
-                (fsmMachine.entity as Actor)?.Walk(_completion);
+                (fsmMachine.entity as Actor)?.Walk();
                 await UniTask.Yield();
             }
         }

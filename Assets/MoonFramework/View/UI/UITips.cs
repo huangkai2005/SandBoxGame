@@ -1,49 +1,50 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace MoonFramework
 {
-    public class UITips : MonoBehaviour
-    {
-        [SerializeField] private Text infoText;
+	public class UITips : MonoBehaviour
+	{
+		[SerializeField]
+		private Text infoText;
+		[SerializeField]
+		private Animator animator;
+		private readonly Queue<string> tipsQueue = new();
+		private bool isShow = false;
 
-        [SerializeField] private Animator animator;
+		/// <summary>
+		/// 添加提示
+		/// </summary>
+		public void AddTips(string info)
+		{
+			tipsQueue.Enqueue(info);
+			ShowTips();
+		}
 
-        private readonly Queue<string> tipsQue = new();
-        private bool isShow;
+		private void ShowTips()
+		{
+			if (tipsQueue.Count > 0 && !isShow)
+			{
+				infoText.text = tipsQueue.Dequeue();
+				animator.Play("Show", 0, 0);
+			}
+		}
 
-        /// <summary>
-        ///     ������ʾ
-        /// </summary>
-        public void AddTips(string info)
-        {
-            tipsQue.Enqueue(info);
-            ShowTips();
-        }
+		#region 动画事件
 
-        private void ShowTips()
-        {
-            if (tipsQue.Count > 0 && !isShow)
-            {
-                infoText.text = tipsQue.Dequeue();
-                animator.Play("Show", 0, 0);
-            }
-        }
+		private void StartTips()
+		{
+			isShow = true;
+		}
 
-        #region �����¼�
+		private void EndTips()
+		{
+			isShow = false;
+			ShowTips();
+		}
 
-        private void StartTips()
-        {
-            isShow = true;
-        }
-
-        private void EndTips()
-        {
-            isShow = false;
-            ShowTips();
-        }
-
-        #endregion �����¼�
-    }
+		#endregion 动画事件
+	}
 }

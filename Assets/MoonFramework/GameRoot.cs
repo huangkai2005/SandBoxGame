@@ -46,7 +46,8 @@ namespace MoonFramework.Template
                 Instance = GameObject.Find("GameRoot").GetComponent<GameRoot>();
                 // 清空事件
                 EventCenter.Instance.Clear();
-                //Instance.GameSetting.InitForEditor();
+                Instance.InitManager();
+                Instance.GameSetting.InitForEditor();
             }
         }
 #endif
