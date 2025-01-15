@@ -1,6 +1,7 @@
 using Sirenix.OdinInspector;
 using System;
 using Cysharp.Threading.Tasks;
+using MoonFramework.Audio;
 using UnityEngine;
 using MoonFramework.FSM;
 using UnityEngine.Rendering.PostProcessing;
@@ -12,6 +13,7 @@ namespace MoonFramework.GameTime
     {
         public override void Entry()
         {
+            base.Entry();
             RenderSettings.fog = true;
             Fog().Forget();
         }
@@ -27,6 +29,7 @@ namespace MoonFramework.GameTime
 
         public override void Exit()
         {
+            base.Exit();
             RenderSettings.fog = false;
         }
     }
@@ -36,12 +39,12 @@ namespace MoonFramework.GameTime
     {
         public override void Entry()
         {
-            
+            base.Entry();   
         }   
 
         public override void Exit()
         {
-            
+            base.Exit();
         }
     }
 
@@ -50,12 +53,12 @@ namespace MoonFramework.GameTime
     {
         public override void Entry()
         {
-            
+            base.Entry();
         }
 
         public override void Exit()
         {
-            
+            base.Exit();
         }
     }
 
@@ -64,12 +67,12 @@ namespace MoonFramework.GameTime
     {
         public override void Entry()
         {
-            
+            base.Entry();
         }
 
         public override void Exit()
         {
-            
+            base.Exit();   
         }
     }
 
@@ -101,9 +104,19 @@ namespace MoonFramework.GameTime
             return curTime > 0;
         }
 
-        public abstract void Entry();
+        public virtual void Entry()
+        {
+            //±≥æ∞“Ù¿÷
+            if (timeData.BgAudioClip)
+            {
+                fsmMachine.ChangeBgAudio(timeData.BgAudioClip).Forget();
+            }
+        }
 
-        public abstract void Exit();
+        public virtual void Exit()
+        {
+            
+        }
     }
     [Serializable]
     public struct TimeData
@@ -154,6 +167,29 @@ namespace MoonFramework.GameTime
             AddTransition(nameof(NightfallTime), nameof(NightTime));
             AddTransition(nameof(NightTime), nameof(MorningTime));
             fsmStates[curState].Entry();
+        }
+
+        public async UniTaskVoid ChangeBgAudio(AudioClip audioClip)
+        {
+            float old = AudioManager.Instance.BGVolume;
+            if (old <= 0) return;
+            float cur = old;
+            //ΩµµÕ“Ù¡ø
+            while (cur > 0)
+            {
+                await UniTask.Yield();
+                cur -= Time.deltaTime;
+                AudioManager.Instance.BGVolume = cur;
+            }
+            AudioManager.Instance.PlayBgAudio(audioClip);
+            //Ã·∏ﬂ“Ù¡ø
+            while (cur < old)
+            {
+                await UniTask.Yield();
+                cur += Time.deltaTime / 2;
+                AudioManager.Instance.BGVolume = cur;
+            }
+            AudioManager.Instance.BGVolume = old;
         }
     }
 }

@@ -48,6 +48,13 @@ namespace MoonFramework.Template
                 EventCenter.Instance.Clear();
                 Instance.InitManager();
                 Instance.GameSetting.InitForEditor();
+                
+                //场景的所有窗口都进行一次show
+                BaseUIWindow[] windows = Instance.transform.GetComponentsInChildren<BaseUIWindow>();
+                foreach (var win in windows)
+                {
+                    win.OnShow();
+                }
             }
         }
 #endif
